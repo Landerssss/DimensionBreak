@@ -48,7 +48,7 @@ public class PlayerController : MonoBehaviour
 
         // 1. 基础移动
         float moveInput = Input.GetAxisRaw("Horizontal");
-        rb.velocity = new Vector2(moveInput * moveSpeed, rb.velocity.y);
+        rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
 
         // 翻转角色朝向
         if (moveInput > 0 && !isFacingRight) Flip();
@@ -57,7 +57,7 @@ public class PlayerController : MonoBehaviour
         // 2. 跳跃
         if (Input.GetButtonDown("Jump") && isGrounded)
         {
-            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
         }
 
         // 3. 技能：次元突刺 (按 Shift 或 K)
@@ -67,7 +67,7 @@ public class PlayerController : MonoBehaviour
         }
 
         // 4. 技能：滞空 (空中按住跳跃键)
-        if (Input.GetButton("Jump") && !isGrounded && rb.velocity.y < 0)
+        if (Input.GetButton("Jump") && !isGrounded && rb.linearVelocity.y < 0)
         {
             // 只有下落时才能滞空
             rb.gravityScale = floatGravity; 
@@ -82,7 +82,7 @@ public class PlayerController : MonoBehaviour
         if (!isGrounded && Input.GetKeyDown(KeyCode.S))
         {
             // 瞬间向下的速度
-            rb.velocity = new Vector2(0, -diveSpeed);
+            rb.linearVelocity = new Vector2(0, -diveSpeed);
             // 可以加一个状态标记 isDiving，用于碰撞检测时造成AOE
         }
     }
@@ -99,7 +99,7 @@ public class PlayerController : MonoBehaviour
         
         // 施加突刺速度 (朝向当前方向)
         float direction = isFacingRight ? 1f : -1f;
-        rb.velocity = new Vector2(direction * dashSpeed, 0);
+        rb.linearVelocity = new Vector2(direction * dashSpeed, 0);
 
         // TODO: 这里可以生成残影特效
 
@@ -107,7 +107,7 @@ public class PlayerController : MonoBehaviour
 
         // 结束突刺
         rb.gravityScale = originalGravity;
-        rb.velocity = Vector2.zero; // 停顿一下增加打击感，或者保留部分惯性
+        rb.linearVelocity = Vector2.zero; // 停顿一下增加打击感，或者保留部分惯性
         isDashing = false;
 
         // 冷却
@@ -131,11 +131,11 @@ public class PlayerController : MonoBehaviour
                 Debug.Log("次元突刺击杀！重置冷却！");
             }
             // 判定2：如果是下坠状态 (速度非常快向下)
-            else if (rb.velocity.y < -20f) 
+            else if (rb.linearVelocity.y < -20f) 
             {
                  if(enemy != null) enemy.TakeDamage(50);
                  // 下坠命中后弹起
-                 rb.velocity = new Vector2(rb.velocity.x, jumpForce * 0.8f);
+                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce * 0.8f);
             }
             // 判定3：普通碰撞 -> 主角受伤 (略)
         }
