@@ -25,12 +25,23 @@ public class SimpleEnemy : MonoBehaviour
         {
             Instantiate(deathEffectPrefab, transform.position, Quaternion.identity);
         }
-
+        //砍中怪的瞬间画面卡顿一下，简直是太爽了！
+        StartCoroutine(HitStop())
         // 2. 销毁自身
         Destroy(gameObject);
     }
+    IEnumerator HitStop()
+    {
+        // 瞬间变慢（模拟卡顿感）
+        Time.timeScale = 0.1f;
 
-    System.Collections.IEnumerator FlashRed()
+        // 等待真实时间的 0.05 秒 (注意要用 WaitForSecondsRealtime，否则会受 timeScale 影响变得超级慢)
+        yield return new WaitForSecondsRealtime(0.05f);
+
+        // 恢复正常速度
+        Time.timeScale = 1f;
+    }
+        System.Collections.IEnumerator FlashRed()
     {
         SpriteRenderer sr = GetComponent<SpriteRenderer>();
         if(sr != null) 
