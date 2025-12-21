@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;  //IEnumerator
 
 public class SimpleEnemy : MonoBehaviour
 {
@@ -26,7 +27,7 @@ public class SimpleEnemy : MonoBehaviour
             Instantiate(deathEffectPrefab, transform.position, Quaternion.identity);
         }
         //砍中怪的瞬间画面卡顿一下，简直是太爽了！
-        StartCoroutine(HitStop())
+        StartCoroutine(HitStop());
         // 2. 销毁自身
         Destroy(gameObject);
     }
