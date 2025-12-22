@@ -401,11 +401,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ed17789bb9307a046bced6b3b6a271f2, type: 3}
---- !u!4 &1922430767 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8920810987713689523, guid: 24acb946f9af72d4b9d0cb4b27f8c3d4, type: 3}
-  m_PrefabInstance: {fileID: 3537634523479618682}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3537634523479618682
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -417,14 +412,6 @@ PrefabInstance:
     - target: {fileID: 773323426067347971, guid: 24acb946f9af72d4b9d0cb4b27f8c3d4, type: 3}
       propertyPath: m_Name
       value: Player
-      objectReference: {fileID: 0}
-    - target: {fileID: 3288248440476213435, guid: 24acb946f9af72d4b9d0cb4b27f8c3d4, type: 3}
-      propertyPath: groundCheck
-      value: 
-      objectReference: {fileID: 1922430767}
-    - target: {fileID: 3288248440476213435, guid: 24acb946f9af72d4b9d0cb4b27f8c3d4, type: 3}
-      propertyPath: groundLayer.m_Bits
-      value: 4294967295
       objectReference: {fileID: 0}
     - target: {fileID: 8920810987713689523, guid: 24acb946f9af72d4b9d0cb4b27f8c3d4, type: 3}
       propertyPath: m_LocalPosition.x
