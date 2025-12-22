@@ -179,8 +179,8 @@ MonoBehaviour:
   jumpForce: 16
   groundLayer:
     serializedVersion: 2
-    m_Bits: 0
-  groundCheck: {fileID: 0}
+    m_Bits: 4294967295
+  groundCheck: {fileID: 8920810987713689523}
   groundCheckRadius: 0.2
   dashSpeed: 25
   dashDuration: 0.2
