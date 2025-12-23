@@ -139,6 +139,22 @@ public class PlayerController : MonoBehaviour
             }
             // 判定3：普通碰撞 -> 主角受伤 (略)
         }
+        else if (other.CompareTag("Portal"))
+        {
+            Debug.Log("进入维度裂缝！切换塔防模式！");
+
+            // 1. 禁用主角控制
+            this.enabled = false; 
+            rb.linearVelocity = Vector2.zero;
+            // 可以把主角隐藏，或者播放一个消失动画
+            // gameObject.SetActive(false); 
+
+            // 2. 通知摄像机切换
+            Camera.main.GetComponent<CameraDimensionController>().SwitchToTDMode();
+
+            // 3. 通知塔防系统生成网格
+            FindObjectOfType<TowerGridSystem>().GenerateGrid();
+        }
     }
 
     // 【爽点核心】重置突刺
