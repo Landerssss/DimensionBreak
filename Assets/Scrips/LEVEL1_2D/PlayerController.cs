@@ -30,7 +30,7 @@ public class PlayerController : MonoBehaviour
     private bool canDash = true;
     private bool isFacingRight = true;
     private float defaultGravity;
-    private float currentFloatTime;
+    // private float currentFloatTime; // 暂时未使用的变量，先保留
 
     void Start()
     {
@@ -48,7 +48,10 @@ public class PlayerController : MonoBehaviour
 
         // 1. 基础移动
         float moveInput = Input.GetAxisRaw("Horizontal");
-        rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
+        
+        // 【修复点1】使用 SetVelocity(...) 方法，而不是赋值
+        // 【修复点2】获取Y轴速度使用 GetVelocity().y
+        rb.SetVelocity(new Vector2(moveInput * moveSpeed, rb.GetVelocity().y));
 
         // 翻转角色朝向
         if (moveInput > 0 && !isFacingRight) Flip();
@@ -57,7 +60,8 @@ public class PlayerController : MonoBehaviour
         // 2. 跳跃
         if (Input.GetButtonDown("Jump") && isGrounded)
         {
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+            // 【修复点3】同上
+            rb.SetVelocity(new Vector2(rb.GetVelocity().x, jumpForce));
         }
 
         // 3. 技能：次元突刺 (按 Shift 或 K)
@@ -67,23 +71,22 @@ public class PlayerController : MonoBehaviour
         }
 
         // 4. 技能：滞空 (空中按住跳跃键)
-        if (Input.GetButton("Jump") && !isGrounded && rb.linearVelocity.y < 0)
+        // 【修复点4】将 linearVelocity.y 改为 GetVelocity().y
+        if (Input.GetButton("Jump") && !isGrounded && rb.GetVelocity().y < 0)
         {
             // 只有下落时才能滞空
             rb.gravityScale = floatGravity; 
-            // 这里可以加一个计时器限制滞空时间，防止无限飞
         }
         else
         {
             rb.gravityScale = defaultGravity;
         }
 
-        // 5. 技能：裂空下坠 (空中按 下 + 攻击/跳跃，这里设为 S 键)
+        // 5. 技能：裂空下坠 (空中按 S 键)
         if (!isGrounded && Input.GetKeyDown(KeyCode.S))
         {
-            // 瞬间向下的速度
-            rb.linearVelocity = new Vector2(0, -diveSpeed);
-            // 可以加一个状态标记 isDiving，用于碰撞检测时造成AOE
+            // 【修复点5】使用 SetVelocity(...)
+            rb.SetVelocity(new Vector2(0, -diveSpeed));
         }
     }
 
@@ -99,7 +102,8 @@ public class PlayerController : MonoBehaviour
         
         // 施加突刺速度 (朝向当前方向)
         float direction = isFacingRight ? 1f : -1f;
-        rb.linearVelocity = new Vector2(direction * dashSpeed, 0);
+        // 【修复点6】使用 SetVelocity(...)
+        rb.SetVelocity(new Vector2(direction * dashSpeed, 0));
 
         // TODO: 这里可以生成残影特效
 
@@ -107,7 +111,8 @@ public class PlayerController : MonoBehaviour
 
         // 结束突刺
         rb.gravityScale = originalGravity;
-        rb.linearVelocity = Vector2.zero; // 停顿一下增加打击感，或者保留部分惯性
+        // 【修复点7】使用 SetVelocity(...)
+        rb.SetVelocity(Vector2.zero); // 停顿一下增加打击感
         isDashing = false;
 
         // 冷却
@@ -126,29 +131,31 @@ public class PlayerController : MonoBehaviour
             // 判定1：如果是突刺状态撞到的 -> 秒杀并重置CD
             if (isDashing)
             {
-                if(enemy != null) enemy.TakeDamage(100); // 造成巨大伤害
+                if(enemy != null) enemy.TakeDamage(100); 
                 ResetDash(); // 【爽点核心】击杀重置！
                 Debug.Log("次元突刺击杀！重置冷却！");
             }
             // 判定2：如果是下坠状态 (速度非常快向下)
-            else if (rb.linearVelocity.y < -20f) 
+            // 【修复点8】这里你之前漏了括号，且要用 GetVelocity()
+            else if (rb.GetVelocity().y < -20f) 
             {
                  if(enemy != null) enemy.TakeDamage(50);
                  // 下坠命中后弹起
-                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce * 0.8f);
+                 // 【修复点9】使用 SetVelocity(...)
+                 rb.SetVelocity(new Vector2(rb.GetVelocity().x, jumpForce * 0.8f));
             }
             // 判定3：普通碰撞 -> 主角受伤 (略)
         }
         else if (other.CompareTag("Portal"))
         {
             Debug.Log("进入维度裂缝！切换塔防模式！");
-
+            
             // 1. 禁用主角控制
             this.enabled = false; 
-            rb.linearVelocity = Vector2.zero;
-            // 可以把主角隐藏，或者播放一个消失动画
-            // gameObject.SetActive(false); 
-
+            
+            // 【修复点10】使用 SetVelocity(...)
+            rb.SetVelocity(Vector2.zero);
+            
             // 2. 通知摄像机切换
             Camera.main.GetComponent<CameraDimensionController>().SwitchToTDMode();
 
@@ -161,8 +168,7 @@ public class PlayerController : MonoBehaviour
     public void ResetDash()
     {
         canDash = true;
-        StopCoroutine("DashCoroutine"); // 停止当前的协程逻辑（如果需要立即打断）
-        // 恢复重力防止卡在空中（看设计需求，也可以不恢复让你继续飞）
+        StopCoroutine("DashCoroutine"); 
         rb.gravityScale = defaultGravity; 
         isDashing = false; 
     }
