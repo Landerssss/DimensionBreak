@@ -1,87 +1,92 @@
 using UnityEngine;
+using System.Collections.Generic;
 
-public class TowerGridSystem : MonoBehaviour
+public class FusionGridSystem : MonoBehaviour
 {
-    [Header("=== Ëş·ÀÉèÖÃ ===")]
-    public GameObject tilePrefab; // ¸ñ×ÓÔ¤ÖÆÌå£¨×öÒ»¸ö°ëÍ¸Ã÷µÄ·½¿é£©
-    public GameObject towerPrefab; // Ëş/Ö²ÎïÔ¤ÖÆÌå£¨×öÒ»¸öÔ²ÖùÌå´úÌæ£©
-    public int gridWidth = 8;     // ¿í¶àÉÙ¸ö¸ñ×Ó
-    public int gridHeight = 5;    // ¸ß¶àÉÙ¸ö¸ñ×Ó
-    public float cellSize = 1.5f; // ¸ñ×Ó´óĞ¡
-    public Transform gridOrigin;  // Íø¸ñÉú³ÉµÄÆğÊ¼µã£¨·ÅÔÚËş·ÀµØÍ¼µÄ×óÏÂ½Ç£©
-
-    [Header("=== ¿ØÖÆ¿ª¹Ø ===")]
-    public bool isTDActive = false; // Ö»ÓĞÇĞ»»ÊÓ½Çºó²Å¿ªÆô
-
-    private GameObject[,] gridArray;
-
-    void Start()
+    [System.Serializable]
+    public class FusionRecipe
     {
-        // ÓÎÏ·¿ªÊ¼Ê±ÏÈ²»Éú³É£¬»òÕßÉú³ÉÁËÏÈÒş²Ø
-        // GenerateGrid(); // Èç¹ûÏëÒ»¿ªÊ¼¾ÍÉú³É²âÊÔ£¬¿ÉÒÔÈ¡Ïû×¢ÊÍ
+        public string basePlantTag; // åœ°ä¸ŠåŸæœ¬çš„æ¤ç‰© (æ¯”å¦‚ "Peashooter")
+        public string cardPlantTag; // æ‰‹é‡Œçš„å¡ç‰‡æ¤ç‰© (æ¯”å¦‚ "WallNut")
+        public GameObject resultPrefab; // èåˆç»“æœ (æ¯”å¦‚ "NutShooter")
     }
+
+    public List<FusionRecipe> recipes; // åœ¨é¢æ¿é‡Œé…ç½®ä½ çš„èåˆé…æ–¹
+    public LayerMask gridLayer;
+    
+    // å½“å‰é€‰ä¸­çš„å¡ç‰‡æ¤ç‰©Tag (ç”±UIæŒ‰é’®è®¾ç½®)
+    private string selectedPlantTag = ""; 
+    private GameObject selectedPlantPrefab; 
 
     void Update()
     {
-        if (!isTDActive) return;
-
-        // Êó±êµã»÷·ÅÖÃÂß¼­
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) && selectedPlantTag != "")
         {
             HandleClick();
         }
     }
 
-    // 1. Éú³ÉÍø¸ñ (ÔÚ½øÈëËş·ÀÄ£Ê½Ê±µ÷ÓÃ)
-    public void GenerateGrid()
+    // UIæŒ‰é’®è°ƒç”¨è¿™ä¸ªæ–¹æ³•
+    public void SelectCard(string tag, GameObject prefab)
     {
-        isTDActive = true;
-        gridArray = new GameObject[gridWidth, gridHeight];
-
-        for (int x = 0; x < gridWidth; x++)
-        {
-            for (int y = 0; y < gridHeight; y++)
-            {
-                // ¼ÆËãÎ»ÖÃ
-                Vector3 pos = gridOrigin.position + new Vector3(x * cellSize, 0, y * cellSize); // ×¢ÒâÕâÀïÓÃXºÍZÖá£¬ÒòÎªÊÇÆ½ÆÌÔÚµØÉÏ
-
-                // Éú³É¸ñ×ÓÏÔÊ¾
-                GameObject tile = Instantiate(tilePrefab, pos, Quaternion.identity);
-                tile.transform.SetParent(gridOrigin);
-                gridArray[x, y] = tile;
-            }
-        }
+        selectedPlantTag = tag;
+        selectedPlantPrefab = prefab;
+        Debug.Log("é€‰ä¸­å¡ç‰‡: " + tag);
     }
 
-    // 2. ´¦Àíµã»÷
     void HandleClick()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
+        RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction, 100f, gridLayer);
 
-        if (Physics.Raycast(ray, out hit))
+        if (hit.collider != null)
         {
-            // Èç¹ûµãµ½ÁË¸ñ×Ó (È·±£¸ñ×ÓÔ¤ÖÆÌåÓĞCollider)
-            // ÕâÀï×öÒ»¸ö¼òµ¥µÄ½üËÆ¼ÆËãÕÒµ½×î½üµÄ¸ñ×ÓÖĞĞÄ
-            Vector3 clickPos = hit.point - gridOrigin.position;
-            int x = Mathf.FloorToInt(clickPos.x / cellSize);
-            int y = Mathf.FloorToInt(clickPos.z / cellSize);
+            // è·å–è¿™ä¸ªæ ¼å­è„šæœ¬
+            GridCell cell = hit.collider.GetComponent<GridCell>();
+            if (cell == null) return;
 
-            // ¼ì²é±ß½ç
-            if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight)
+            if (cell.currentPlant == null)
             {
-                PlaceTower(x, y);
+                // === æƒ…å†µA: ç©ºæ ¼å­ï¼Œç›´æ¥ç§æ¤ ===
+                GameObject newPlant = Instantiate(selectedPlantPrefab, cell.transform.position, Quaternion.identity);
+                cell.SetPlant(newPlant, selectedPlantTag);
+                // TODO: æ‰£é™¤å†·å´å’Œé˜³å…‰
+            }
+            else
+            {
+                // === æƒ…å†µB: æœ‰æ¤ç‰©ï¼Œå°è¯•èåˆ ===
+                TryFuse(cell);
             }
         }
     }
 
-    void PlaceTower(int x, int y)
+    void TryFuse(GridCell cell)
     {
-        // ¼ÆËã·ÅÖÃ×ø±ê
-        Vector3 placePos = gridOrigin.position + new Vector3(x * cellSize + cellSize / 2, 0, y * cellSize + cellSize / 2);
+        string baseTag = cell.currentPlantTag;
+        string cardTag = selectedPlantTag;
 
-        // ¼òµ¥·ÀÖ¹ÖØµş£ºÕâÀïÓ¦¸Ã¼Ó¸öÂß¼­ÅĞ¶Ï¸Ã¸ñ×ÓÊÇ·ñÒÑÓĞËş£¨±ÏÉèÔİÊ±ºöÂÔ»òºóĞø¼Ó£©
-        Instantiate(towerPrefab, placePos, Quaternion.identity);
-        Debug.Log($"ÔÚ [{x},{y}] ÖÖÖ²ÁË·ÀÓùËş£¡");
+        // æŸ¥æ‰¾é…æ–¹
+        foreach (var recipe in recipes)
+        {
+            // é…æ–¹åŒ¹é… (è±Œè±†+åšæœ æˆ– åšæœ+è±Œè±†)
+            bool match = (recipe.basePlantTag == baseTag && recipe.cardPlantTag == cardTag);
+            
+            if (match)
+            {
+                Debug.Log("èåˆæˆåŠŸï¼ç”Ÿæˆ: " + recipe.resultPrefab.name);
+                
+                // 1. é”€æ¯æ—§æ¤ç‰©
+                Destroy(cell.currentPlant);
+                
+                // 2. ç”Ÿæˆèåˆæ¤ç‰©
+                GameObject fusedPlant = Instantiate(recipe.resultPrefab, cell.transform.position, Quaternion.identity);
+                
+                // 3. æ›´æ–°æ ¼å­æ•°æ®
+                cell.SetPlant(fusedPlant, "Fused_" + baseTag + "_" + cardTag);
+                return;
+            }
+        }
+
+        Debug.Log("æ— æ³•èåˆè¿™ä¸¤ä¸ªæ¤ç‰©ï¼");
     }
 }
