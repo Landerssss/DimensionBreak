@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class ExpEnemy : MonoBehaviour
+public class EnemyRPG : MonoBehaviour
 {
     [Header("=== 怪物属性 ===")]
     public int hp = 100;
