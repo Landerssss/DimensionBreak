@@ -1,64 +1,122 @@
 using UnityEngine;
-using UnityEngine.Events;
+using System.Collections;
 
-public class GameManager : MonoBehaviour
+public class PlayerController : MonoBehaviour
 {
-    public static GameManager Instance;
+    [Header("=== 基础属性 ===")]
+    public float moveSpeed = 8f;
+    public float jumpForce = 16f;
+    public LayerMask groundLayer;
+    public Transform groundCheck;
+    public float groundCheckRadius = 0.2f;
 
-    [Header("=== RPG 属性 ===")]
-    public int currentLevel = 1;
-    public float currentExp = 0;
-    public float expMultiplier = 1.0f; // 经验倍率（初始1倍）
+    [Header("=== 技能配置 ===")]
+    public float dashSpeed = 25f;
+    public float dashCooldown = 1f;
+    public float diveSpeed = 30f;
 
-    [Header("=== 技能解锁阈值 ===")]
-    public int dashUnlockLevel = 20;   // 20级解锁突刺
-    public int diveUnlockLevel = 50;   // 50级解锁下坠
+    // --- 内部状态 ---
+    private Rigidbody2D rb;
+    private bool isGrounded;
+    private bool canDash = true;
+    private bool isDashing = false;
+    private bool isFacingRight = true;
+    private float defaultGravity;
 
-    [Header("=== 游戏状态 ===")]
-    public bool isPhase1Complete = false;
-    public bool isTransitioning = false;
-
-    // 事件：当升级时通知UI更新
-    public UnityEvent<int> onLevelUp;
-
-    void Awake()
+    void Start()
     {
-        if (Instance == null) Instance = this;
-        else Destroy(gameObject);
+        rb = GetComponent<Rigidbody2D>();
+        defaultGravity = rb.gravityScale;
     }
 
-    // 增加经验（核心爽点逻辑）
-    public void AddExp(float amount)
+    void Update()
     {
-        // 应用倍率
-        float finalExp = amount * expMultiplier;
-        currentExp += finalExp;
-
-        // 简单粗暴的升级逻辑：每100经验升1级 (或者你可以写更复杂的公式)
-        // 这里为了配合你的需求：打一个怪升8级。假设怪给800经验。
-        while (currentExp >= 100) 
+        // 如果正在剧情转场中，禁止操作
+        if (GameManager.Instance.isTransitioning) 
         {
-            LevelUp();
-            currentExp -= 100;
+            rb.SetVelocity(Vector2.zero);
+            return;
+        }
+
+        // 0. 地面检测
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+
+        if (isDashing) return;
+
+        // 1. 基础移动
+        float moveInput = Input.GetAxisRaw("Horizontal");
+        rb.SetVelocity(new Vector2(moveInput * moveSpeed, rb.GetVelocity().y));
+
+        if (moveInput > 0 && !isFacingRight) Flip();
+        else if (moveInput < 0 && isFacingRight) Flip();
+
+        // 2. 跳跃 (无需等级)
+        if (Input.GetButtonDown("Jump") && isGrounded)
+        {
+            rb.SetVelocity(new Vector2(rb.GetVelocity().x, jumpForce));
+        }
+
+        // 3. 技能一：次元突刺 (需 Lv.20)
+        // 判定条件：按下键 + CD转好 + 技能已解锁
+        if (Input.GetKeyDown(KeyCode.LeftShift) && canDash && GameManager.Instance.IsDashUnlocked())
+        {
+            StartCoroutine(DashCoroutine());
+        }
+        else if (Input.GetKeyDown(KeyCode.LeftShift) && !GameManager.Instance.IsDashUnlocked())
+        {
+            Debug.Log($"等级不足！需要 {GameManager.Instance.dashUnlockLevel} 级解锁突刺");
+        }
+
+        // 4. 技能二：裂空下坠 (需 Lv.50)
+        // 判定条件：在空中 + 按下S + 技能已解锁
+        if (!isGrounded && Input.GetKeyDown(KeyCode.S))
+        {
+            if (GameManager.Instance.IsDiveUnlocked())
+            {
+                // 下坠逻辑：速度快，伤害高
+                rb.SetVelocity(new Vector2(0, -diveSpeed));
+            }
+            else
+            {
+                Debug.Log($"等级不足！需要 {GameManager.Instance.diveUnlockLevel} 级解锁下坠");
+            }
         }
     }
 
-    void LevelUp()
+    // --- 技能逻辑保持不变 ---
+    IEnumerator DashCoroutine()
     {
-        currentLevel++;
-        Debug.Log($"升级了！当前等级: {currentLevel}");
+        isDashing = true;
+        canDash = false;
+        float originalGravity = rb.gravityScale;
+        rb.gravityScale = 0;
+        
+        float direction = isFacingRight ? 1f : -1f;
+        rb.SetVelocity(new Vector2(direction * dashSpeed, 0));
 
-        // 第一次打怪后的特殊奖励：经验倍率永久+200%
-        if (currentLevel >= 8 && expMultiplier == 1.0f) 
-        {
-            expMultiplier = 3.0f; // 1 + 200% = 3倍
-            Debug.Log("获得被动：经验获取速度 +200%！");
-        }
+        yield return new WaitForSeconds(0.2f); // 突刺时间
 
-        onLevelUp?.Invoke(currentLevel);
+        rb.gravityScale = originalGravity;
+        rb.SetVelocity(Vector2.zero);
+        isDashing = false;
+        yield return new WaitForSeconds(dashCooldown);
+        canDash = true;
     }
 
-    // 查询技能是否解锁
-    public bool IsDashUnlocked() => currentLevel >= dashUnlockLevel;
-    public bool IsDiveUnlocked() => currentLevel >= diveUnlockLevel;
+    // 击杀重置接口
+    public void ResetDash()
+    {
+        canDash = true;
+        isDashing = false;
+        rb.gravityScale = defaultGravity;
+        StopCoroutine("DashCoroutine");
+    }
+
+    void Flip()
+    {
+        isFacingRight = !isFacingRight;
+        Vector3 scaler = transform.localScale;
+        scaler.x *= -1;
+        transform.localScale = scaler;
+    }
 }
