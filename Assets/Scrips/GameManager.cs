@@ -5,21 +5,20 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
-    [Header("=== RPG 属性 ===")]
+    [Header("=== RPG 数值系统 ===")]
     public int currentLevel = 1;
     public float currentExp = 0;
-    public float expMultiplier = 1.0f; // 经验倍率（初始1倍）
+    public float expToNextLevel = 100f; 
+    public float expMultiplier = 1.0f;  
 
-    [Header("=== 技能解锁阈值 ===")]
-    public int dashUnlockLevel = 20;   // 20级解锁突刺
-    public int diveUnlockLevel = 50;   // 50级解锁下坠
+    [Header("=== 技能解锁门槛 ===")]
+    public int dashUnlockLevel = 20; 
+    public int diveUnlockLevel = 50; 
 
-    [Header("=== 游戏状态 ===")]
-    public bool isPhase1Complete = false;
-    public bool isTransitioning = false;
-
-    // 事件：当升级时通知UI更新
-    public UnityEvent<int> onLevelUp;
+    [Header("=== 游戏阶段状态 ===")]
+    // 【关键修复】确保这行代码存在！
+    public bool isPhase1 = true;      
+    public bool isTransitioning = false; 
 
     void Awake()
     {
@@ -27,38 +26,30 @@ public class GameManager : MonoBehaviour
         else Destroy(gameObject);
     }
 
-    // 增加经验（核心爽点逻辑）
     public void AddExp(float amount)
     {
-        // 应用倍率
         float finalExp = amount * expMultiplier;
         currentExp += finalExp;
 
-        // 简单粗暴的升级逻辑：每100经验升1级 (或者你可以写更复杂的公式)
-        // 这里为了配合你的需求：打一个怪升8级。假设怪给800经验。
-        while (currentExp >= 100) 
+        while (currentExp >= expToNextLevel)
         {
+            currentExp -= expToNextLevel;
             LevelUp();
-            currentExp -= 100;
         }
     }
 
     void LevelUp()
     {
         currentLevel++;
-        Debug.Log($"升级了！当前等级: {currentLevel}");
+        Debug.Log($"升级！当前等级: {currentLevel}");
 
-        // 第一次打怪后的特殊奖励：经验倍率永久+200%
-        if (currentLevel >= 8 && expMultiplier == 1.0f) 
+        if (currentLevel >= 8 && expMultiplier == 1.0f)
         {
-            expMultiplier = 3.0f; // 1 + 200% = 3倍
+            expMultiplier = 3.0f; 
             Debug.Log("获得被动：经验获取速度 +200%！");
         }
-
-        onLevelUp?.Invoke(currentLevel);
     }
 
-    // 查询技能是否解锁
-    public bool IsDashUnlocked() => currentLevel >= dashUnlockLevel;
-    public bool IsDiveUnlocked() => currentLevel >= diveUnlockLevel;
+    public bool CanUseDash() => currentLevel >= dashUnlockLevel;
+    public bool CanUseDive() => currentLevel >= diveUnlockLevel;
 }
