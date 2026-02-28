@@ -1,172 +1,375 @@
 using UnityEngine;
 using System.Collections;
 
+/// <summary>
+/// 阶段一玩家控制器：移动 / 跳跃 / 冲刺 / 攻击 / 钩锁 / 下坠攻击
+/// 所有数值均通过 [SerializeField] 暴露到 Inspector。
+/// </summary>
 public class PlayerController : MonoBehaviour
 {
-    [Header("=== 基础属性 ===")]
-    public float moveSpeed = 8f;
-    public float jumpForce = 16f;
-    public LayerMask groundLayer;
-    public Transform groundCheck;
-    public float groundCheckRadius = 0.2f;
+    // ────────────────── 基础移动 ──────────────────
+    [Header("=== 基础移动 ===")]
+    [SerializeField] private float moveSpeed = 8f;
+    [SerializeField] private float jumpForce = 16f;
+    [SerializeField] private LayerMask groundLayer;
+    [SerializeField] private Transform groundCheck;
+    [SerializeField] private float groundCheckRadius = 0.2f;
 
-    [Header("=== 技能：次元突刺 ===")]
-    public float dashSpeed = 25f;
-    public float dashDuration = 0.2f;
-    public float dashCooldown = 1f;
-    
-    [Header("=== 技能：裂口下坠 (无CD) ===")]
-    public float diveSpeed = 45f;         // 下坠速度
-    public float diveDamageBonus = 1.5f;  // 下坠伤害加成
+    // ────────────────── 冲刺 (Shift) ──────────────────
+    [Header("=== 冲刺 ===")]
+    [SerializeField] private float dashSpeed = 25f;
+    [SerializeField] private float dashDuration = 0.2f;
+    [SerializeField] private float dashCooldown = 1f;
+    [Tooltip("达到此等级后冲刺附带路径伤害")]
+    [SerializeField] private int dashAttackUnlockLevel = 20;
+    [SerializeField] private float dashAttackDamageMultiplier = 2f;
+    [SerializeField] private float dashAttackWidth = 1f;
+    [SerializeField] private LayerMask enemyLayer;
 
-    // --- 状态标记 ---
+    // ────────────────── 近战攻击 (左键) ──────────────────
+    [Header("=== 近战攻击 ===")]
+    [SerializeField] private float attackRange = 1.5f;
+    [SerializeField] private Transform attackPoint;
+    [SerializeField] private float attackCooldown = 0.35f;
+
+    // ────────────────── 钩锁 (T / 右键) ──────────────────
+    [Header("=== 钩锁 ===")]
+    [SerializeField] private float grappleSpeed = 20f;
+    [SerializeField] private float grappleMaxDistance = 15f;
+    [SerializeField] private float grappleArriveThreshold = 0.5f;
+    [SerializeField] private LayerMask grappleObstacleLayer;
+    [SerializeField] private LineRenderer grappleLineRenderer;
+
+    // ────────────────── 下坠攻击 (空中双击S) ──────────────────
+    [Header("=== 下坠攻击 ===")]
+    [SerializeField] private float diveSpeed = 45f;
+    [SerializeField] private float diveAOERadius = 2f;
+    [SerializeField] private float diveDamageMultiplier = 1.5f;
+    [SerializeField] private float diveCooldown = 1.5f;
+    [Tooltip("双击S的判定间隔（秒）")]
+    [SerializeField] private float doubleTapWindow = 0.3f;
+
+    // ────────────────── 内部状态 ──────────────────
     private Rigidbody2D rb;
     private bool isGrounded;
     private bool isFacingRight = true;
-    
-    // 技能状态
-    private bool isDashing = false;
+    private float defaultGravity;
+
+    // 冲刺
+    private bool isDashing;
     private bool canDash = true;
     public bool IsDashing => isDashing;
-    public bool IsDiving { get; private set; }
 
-    private float defaultGravity;
+    // 下坠
+    public bool IsDiving { get; private set; }
+    private bool canDive = true;
+    private float lastSPressTime = -999f;
+
+    // 攻击
+    private float lastAttackTime = -999f;
+
+    // 钩锁
+    private bool isGrappling;
+    private Vector2 grappleTarget;
+
+    // 引用
+    private PlayerStats playerStats;
+
+    // ══════════════════ 生命周期 ══════════════════
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         defaultGravity = rb.gravityScale;
+        playerStats = GetComponent<PlayerStats>();
+
+        if (grappleLineRenderer != null)
+            grappleLineRenderer.enabled = false;
     }
 
     void Update()
     {
-        // 如果正在转场（比如播放跳跃动画），禁止操作
-        if (GameManager.Instance != null && GameManager.Instance.isTransitioning) 
+        // 转场中禁止操作
+        if (GameManager.Instance != null && GameManager.Instance.isTransitioning)
         {
-            rb.SetVelocity(Vector2.zero);
+            rb.linearVelocity = Vector2.zero;
             return;
         }
 
-        // 0. 地面检测
+        // 地面检测
         isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
 
-        // 落地后取消下坠状态
-        if (isGrounded && IsDiving) 
+        // 落地后结束下坠状态 —— 触发 AOE
+        if (isGrounded && IsDiving)
         {
             IsDiving = false;
-            // 落地瞬间可以产生一个震地效果
-            // TODO: 添加震地特效和AOE伤害
+            PerformDiveAOE();
+        }
+
+        // 钩锁移动中
+        if (isGrappling)
+        {
+            HandleGrappleMovement();
+            return;
         }
 
         // 冲刺中禁止其他操作
         if (isDashing) return;
 
-        // 1. 左右移动
-        float xInput = Input.GetAxisRaw("Horizontal");
-        float yVelocity = IsDiving ? -diveSpeed : rb.GetVelocity().y;
-        
-        // 下坠时保留一部分水平速度
-        float xVelocity = IsDiving ? rb.GetVelocity().x * 0.95f : xInput * moveSpeed;
-        rb.SetVelocity(new Vector2(xVelocity, yVelocity));
+        HandleMovement();
+        HandleJump();
+        HandleDash();
+        HandleAttack();
+        HandleGrappleInput();
+        HandleDiveInput();
+    }
 
-        // 翻转朝向（只在不下坠时）
+    // ══════════════════ 移动 ══════════════════
+
+    void HandleMovement()
+    {
+        float xInput = Input.GetAxisRaw("Horizontal");
+        float yVelocity = IsDiving ? -diveSpeed : rb.linearVelocity.y;
+        float xVelocity = IsDiving ? rb.linearVelocity.x * 0.95f : xInput * moveSpeed;
+
+        rb.linearVelocity = new Vector2(xVelocity, yVelocity);
+
         if (!IsDiving)
         {
             if (xInput > 0 && !isFacingRight) Flip();
             else if (xInput < 0 && isFacingRight) Flip();
         }
+    }
 
-        // 2. 跳跃
+    void HandleJump()
+    {
         if (Input.GetButtonDown("Jump") && isGrounded)
         {
-            rb.SetVelocity(new Vector2(rb.GetVelocity().x, jumpForce));
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
         }
+    }
 
-        // 3. 技能：次元突刺 (需等级解锁，有CD)
+    // ══════════════════ 冲刺 ══════════════════
+
+    void HandleDash()
+    {
         if (Input.GetKeyDown(KeyCode.LeftShift) && canDash)
         {
-            if (GameManager.Instance.CanUseDash())
-            {
-                StartCoroutine(DashCoroutine());
-            }
-            else
-            {
-                Debug.Log($"等级不足！需要 Lv.{GameManager.Instance.dashUnlockLevel} 解锁【次元突刺】");
-            }
-        }
-
-        // 4. 技能：裂口下坠 (需等级解锁，无CD！)
-        // 空中 + 按下S键 + 不在下坠状态
-        if (!isGrounded && Input.GetKeyDown(KeyCode.S) && !IsDiving)
-        {
-            if (GameManager.Instance.CanUseDive())
-            {
-                ActivateDive();
-            }
-            else
-            {
-                Debug.Log($"等级不足！需要 Lv.{GameManager.Instance.diveUnlockLevel} 解锁【裂口下坠】");
-            }
+            StartCoroutine(DashCoroutine());
         }
     }
 
-    /// <summary>
-    /// 激活裂口下坠（无CD设计，但需要等级）
-    /// </summary>
-    void ActivateDive()
-    {
-        IsDiving = true;
-        
-        // 给一个瞬间向下的爆发力，保留部分水平速度
-        float currentX = rb.GetVelocity().x;
-        rb.SetVelocity(new Vector2(currentX * 0.3f, -diveSpeed));
-        
-        // TODO: 下坠特效（残影、拖尾等）
-        Debug.Log("裂口下坠！");
-    }
-
-    // --- 突刺逻辑 ---
     IEnumerator DashCoroutine()
     {
         isDashing = true;
         canDash = false;
-        
-        // 突刺时无视重力
+
         float originalGrav = rb.gravityScale;
         rb.gravityScale = 0;
 
-        // 向面朝方向冲
         float dir = isFacingRight ? 1f : -1f;
-        rb.SetVelocity(new Vector2(dir * dashSpeed, 0));
-        
-        // TODO: 生成残影特效
+        rb.linearVelocity = new Vector2(dir * dashSpeed, 0);
+
+        // 突刺进化：达到等级后路径上检测敌人并造成伤害
+        bool hasDashAttack = playerStats != null && playerStats.CurrentLevel >= dashAttackUnlockLevel;
+        if (hasDashAttack)
+        {
+            DashAttackSweep(dir);
+        }
 
         yield return new WaitForSeconds(dashDuration);
 
-        // 结束
         rb.gravityScale = originalGrav;
-        rb.SetVelocity(Vector2.zero); // 停顿一下增加打击感
+        rb.linearVelocity = Vector2.zero;
         isDashing = false;
 
-        // 进入冷却
         yield return new WaitForSeconds(dashCooldown);
         canDash = true;
     }
 
     /// <summary>
-    /// 【爽点核心】击杀敌人后调用此方法，立即重置突刺
+    /// 冲刺路径伤害扫描
     /// </summary>
+    void DashAttackSweep(float direction)
+    {
+        float baseDmg = playerStats != null ? playerStats.GetFinalDamage(dashAttackDamageMultiplier) : 10f;
+
+        Vector2 origin = (Vector2)transform.position;
+        Vector2 size = new Vector2(dashSpeed * dashDuration, dashAttackWidth);
+        Vector2 dashDir = new Vector2(direction, 0);
+
+        RaycastHit2D[] hits = Physics2D.BoxCastAll(origin, size, 0f, dashDir, dashSpeed * dashDuration, enemyLayer);
+        foreach (var hit in hits)
+        {
+            EnemyAI enemy = hit.collider.GetComponent<EnemyAI>();
+            if (enemy != null)
+            {
+                enemy.TakeDamage(baseDmg);
+            }
+        }
+    }
+
     public void InstantResetDash()
     {
-        Debug.Log("★ 击杀重置突刺！");
         canDash = true;
-        StopCoroutine("DashCoroutine");
+        StopCoroutine(nameof(DashCoroutine));
         isDashing = false;
         rb.gravityScale = defaultGravity;
-        
-        // TODO: 屏幕震动特效
-        // CameraShake.Instance?.Shake(0.1f, 0.2f);
     }
+
+    // ══════════════════ 近战攻击 ══════════════════
+
+    void HandleAttack()
+    {
+        if (Input.GetMouseButtonDown(0) && Time.time >= lastAttackTime + attackCooldown)
+        {
+            lastAttackTime = Time.time;
+            PerformMeleeAttack();
+        }
+    }
+
+    void PerformMeleeAttack()
+    {
+        float skillMultiplier = 1f; // 基础普攻倍率
+        float dmg = playerStats != null ? playerStats.GetFinalDamage(skillMultiplier) : 10f;
+
+        Collider2D[] enemies = Physics2D.OverlapCircleAll(
+            attackPoint != null ? attackPoint.position : transform.position,
+            attackRange, enemyLayer);
+
+        foreach (var col in enemies)
+        {
+            EnemyAI enemy = col.GetComponent<EnemyAI>();
+            if (enemy != null)
+            {
+                enemy.TakeDamage(dmg);
+            }
+        }
+    }
+
+    // ══════════════════ 钩锁 ══════════════════
+
+    void HandleGrappleInput()
+    {
+        if (Input.GetKeyDown(KeyCode.T) || Input.GetMouseButtonDown(1))
+        {
+            LaunchGrapple();
+        }
+    }
+
+    void LaunchGrapple()
+    {
+        Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        mouseWorld.z = 0;
+
+        Vector2 origin = transform.position;
+        Vector2 dir = ((Vector2)mouseWorld - origin).normalized;
+        float dist = Mathf.Min(Vector2.Distance(origin, mouseWorld), grappleMaxDistance);
+
+        RaycastHit2D hit = Physics2D.Raycast(origin, dir, dist, grappleObstacleLayer);
+        if (hit.collider != null)
+        {
+            grappleTarget = hit.point;
+            isGrappling = true;
+            rb.gravityScale = 0;
+
+            if (grappleLineRenderer != null)
+            {
+                grappleLineRenderer.enabled = true;
+                grappleLineRenderer.SetPosition(0, transform.position);
+                grappleLineRenderer.SetPosition(1, grappleTarget);
+            }
+        }
+    }
+
+    void HandleGrappleMovement()
+    {
+        Vector2 pos = (Vector2)transform.position;
+        Vector2 direction = (grappleTarget - pos).normalized;
+        rb.linearVelocity = direction * grappleSpeed;
+
+        if (grappleLineRenderer != null)
+            grappleLineRenderer.SetPosition(0, transform.position);
+
+        if (Vector2.Distance(pos, grappleTarget) < grappleArriveThreshold)
+        {
+            EndGrapple();
+        }
+
+        // 允许玩家提前取消
+        if (Input.GetKeyDown(KeyCode.T) || Input.GetMouseButtonDown(1) || Input.GetButtonDown("Jump"))
+        {
+            EndGrapple();
+        }
+    }
+
+    void EndGrapple()
+    {
+        isGrappling = false;
+        rb.gravityScale = defaultGravity;
+        rb.linearVelocity = Vector2.zero;
+
+        if (grappleLineRenderer != null)
+            grappleLineRenderer.enabled = false;
+    }
+
+    // ══════════════════ 下坠攻击 ══════════════════
+
+    void HandleDiveInput()
+    {
+        if (!isGrounded && Input.GetKeyDown(KeyCode.S) && canDive)
+        {
+            if (Time.time - lastSPressTime <= doubleTapWindow)
+            {
+                // 双击 S 确认
+                ActivateDive();
+                lastSPressTime = -999f; // 重置
+            }
+            else
+            {
+                lastSPressTime = Time.time;
+            }
+        }
+    }
+
+    void ActivateDive()
+    {
+        IsDiving = true;
+        canDive = false;
+
+        float currentX = rb.linearVelocity.x;
+        rb.linearVelocity = new Vector2(currentX * 0.3f, -diveSpeed);
+
+        Debug.Log("下坠攻击！");
+    }
+
+    void PerformDiveAOE()
+    {
+        float dmg = playerStats != null ? playerStats.GetFinalDamage(diveDamageMultiplier) : 15f;
+
+        Collider2D[] enemies = Physics2D.OverlapCircleAll(transform.position, diveAOERadius, enemyLayer);
+        foreach (var col in enemies)
+        {
+            EnemyAI enemy = col.GetComponent<EnemyAI>();
+            if (enemy != null)
+            {
+                enemy.TakeDamage(dmg);
+            }
+        }
+
+        // 反弹
+        rb.linearVelocity = new Vector2(0, jumpForce * 0.5f);
+
+        StartCoroutine(DiveCooldownCoroutine());
+    }
+
+    IEnumerator DiveCooldownCoroutine()
+    {
+        yield return new WaitForSeconds(diveCooldown);
+        canDive = true;
+    }
+
+    // ══════════════════ 工具方法 ══════════════════
 
     void Flip()
     {
@@ -176,9 +379,21 @@ public class PlayerController : MonoBehaviour
         transform.localScale = scaler;
     }
 
-    // 辅助线
-    void OnDrawGizmos()
+    void OnDrawGizmosSelected()
     {
-        if(groundCheck) Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+        if (groundCheck != null)
+        {
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+        }
+
+        // 攻击范围
+        Gizmos.color = Color.red;
+        Vector3 atkPos = attackPoint != null ? attackPoint.position : transform.position;
+        Gizmos.DrawWireSphere(atkPos, attackRange);
+
+        // 下坠 AOE 范围
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(transform.position, diveAOERadius);
     }
 }
