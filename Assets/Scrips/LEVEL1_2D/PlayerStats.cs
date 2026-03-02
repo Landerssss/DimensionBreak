@@ -42,6 +42,7 @@ public class PlayerStats : MonoBehaviour
     public event Action<int> OnLevelUp;
     public event Action<string> OnSkillUnlocked;
     public event Action<float> OnExpChanged;  // 参数: 0‑1 进度
+    public event Action<string> OnItemObtained; // 新增：通知UI拿到了道具
 
     // ────────────────── 公开属性 ──────────────────
     public int CurrentLevel => currentLevel;
@@ -76,12 +77,22 @@ public class PlayerStats : MonoBehaviour
     }
 
     void LevelUp()
-    {
-        int prev = currentLevel;
-        currentLevel++;
-        Debug.Log($"★ 升级！Lv.{prev} → Lv.{currentLevel}");
-        OnLevelUp?.Invoke(currentLevel);
-    }
+        {
+            int prev = currentLevel;
+            currentLevel++;
+            Debug.Log($"★ 升级！Lv.{prev} → Lv.{currentLevel}");
+            OnLevelUp?.Invoke(currentLevel);
+
+            // <--- 新增这段：特定等级触发技能解锁UI（消除警告）
+            if (currentLevel == 20)
+            {
+                OnSkillUnlocked?.Invoke("次元突刺");
+            }
+            else if (currentLevel == 50)
+            {
+                OnSkillUnlocked?.Invoke("裂口下坠 (无CD版)");
+            }
+        }
 
     // ══════════════════ 击杀与首杀 ══════════════════
 
@@ -105,18 +116,21 @@ public class PlayerStats : MonoBehaviour
     }
 
     void ApplyFirstKillBonus(float baseExp)
-    {
-        firstKillApplied = true;
-        Debug.Log("=== 首杀奖励触发！===");
+        {
+            firstKillApplied = true;
+            Debug.Log("=== 首杀奖励触发！===");
 
-        for (int i = 0; i < firstKillLevelBoost; i++)
-            LevelUp();
+            for (int i = 0; i < firstKillLevelBoost; i++)
+                LevelUp();
+                
+            expItemMultiplierBonus = firstKillExpItemBonus;
+            Debug.Log($"获得永久道具【次元碎片】：经验获取 +{firstKillExpItemBonus * 100}%！");
 
-        expItemMultiplierBonus = firstKillExpItemBonus;
-        Debug.Log($"获得永久道具【次元碎片】：经验获取 +{firstKillExpItemBonus * 100}%！");
+            // <--- 新增这行：触发UI弹出提示
+            OnItemObtained?.Invoke("次元碎片"); 
 
-        AddExp(baseExp);
-    }
+            AddExp(baseExp);
+        }
 
     // ══════════════════ 伤害计算 ══════════════════
 

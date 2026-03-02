@@ -9,7 +9,7 @@ using TMPro;
 public class SkillUnlockUI : MonoBehaviour
 {
     [Header("=== UI 引用 ===")]
-    public TextMeshProUGUI levelText;           // 等级显示
+    public TextMeshProUGUI levelText;            // 等级显示
     public Slider expBar;                        // 经验条
     public GameObject skillUnlockPanel;          // 技能解锁提示面板
     public TextMeshProUGUI skillUnlockText;      // 技能解锁文字
@@ -20,18 +20,24 @@ public class SkillUnlockUI : MonoBehaviour
     public float skillUnlockDisplayTime = 3f;
     public float itemObtainedDisplayTime = 2f;
 
+    // 新增：引用场景中玩家身上的数值中心
+    private PlayerStats playerStats;
+
     void Start()
     {
         // 隐藏提示面板
         if (skillUnlockPanel) skillUnlockPanel.SetActive(false);
         if (itemObtainedPanel) itemObtainedPanel.SetActive(false);
 
-        // 订阅GameManager事件
-        if (GameManager.Instance != null)
+        // 动态获取当前场景里的玩家数值脚本
+        playerStats = FindAnyObjectByType<PlayerStats>();
+
+        // 订阅 PlayerStats 上的事件（而不是 GameManager）
+        if (playerStats != null)
         {
-            GameManager.Instance.OnLevelUp += HandleLevelUp;
-            GameManager.Instance.OnSkillUnlocked += HandleSkillUnlocked;
-            GameManager.Instance.OnItemObtained += HandleItemObtained;
+            playerStats.OnLevelUp += HandleLevelUp;
+            playerStats.OnSkillUnlocked += HandleSkillUnlocked;
+            playerStats.OnItemObtained += HandleItemObtained;
         }
 
         // 初始化UI
@@ -47,35 +53,33 @@ public class SkillUnlockUI : MonoBehaviour
     void OnDestroy()
     {
         // 取消订阅事件（防止内存泄漏）
-        if (GameManager.Instance != null)
+        if (playerStats != null)
         {
-            GameManager.Instance.OnLevelUp -= HandleLevelUp;
-            GameManager.Instance.OnSkillUnlocked -= HandleSkillUnlocked;
-            GameManager.Instance.OnItemObtained -= HandleItemObtained;
+            playerStats.OnLevelUp -= HandleLevelUp;
+            playerStats.OnSkillUnlocked -= HandleSkillUnlocked;
+            playerStats.OnItemObtained -= HandleItemObtained;
         }
     }
 
     void UpdateLevelDisplay()
     {
-        if (levelText != null && GameManager.Instance != null)
+        if (levelText != null && playerStats != null)
         {
-            levelText.text = $"Lv.{GameManager.Instance.currentLevel}";
+            levelText.text = $"Lv.{playerStats.CurrentLevel}";
         }
     }
 
     void UpdateExpBar()
     {
-        if (expBar != null && GameManager.Instance != null)
+        if (expBar != null && playerStats != null)
         {
-            expBar.value = GameManager.Instance.GetExpProgress();
+            expBar.value = playerStats.GetExpProgress();
         }
     }
 
     void HandleLevelUp(int newLevel)
     {
         UpdateLevelDisplay();
-        
-        // 可以在这里添加升级特效
         Debug.Log($"[UI] 升级到 Lv.{newLevel}");
     }
 
@@ -86,7 +90,8 @@ public class SkillUnlockUI : MonoBehaviour
             skillUnlockText.text = $"技能解锁：{skillName}！";
             skillUnlockPanel.SetActive(true);
             
-            // 延迟隐藏
+            // 取消上一次的延迟隐藏（防止连续解锁时UI闪烁）
+            CancelInvoke(nameof(HideSkillUnlockPanel));
             Invoke(nameof(HideSkillUnlockPanel), skillUnlockDisplayTime);
         }
     }
@@ -103,7 +108,7 @@ public class SkillUnlockUI : MonoBehaviour
             itemObtainedText.text = $"获得道具：【{itemName}】";
             itemObtainedPanel.SetActive(true);
             
-            // 延迟隐藏
+            CancelInvoke(nameof(HideItemObtainedPanel));
             Invoke(nameof(HideItemObtainedPanel), itemObtainedDisplayTime);
         }
     }
