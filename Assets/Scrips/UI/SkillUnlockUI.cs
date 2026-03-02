@@ -13,12 +13,10 @@ public class SkillUnlockUI : MonoBehaviour
     public Slider expBar;                        // 经验条
     public GameObject skillUnlockPanel;          // 技能解锁提示面板
     public TextMeshProUGUI skillUnlockText;      // 技能解锁文字
-    public GameObject itemObtainedPanel;         // 道具获取提示面板
-    public TextMeshProUGUI itemObtainedText;     // 道具获取文字
+
 
     [Header("=== 提示显示时间 ===")]
     public float skillUnlockDisplayTime = 3f;
-    public float itemObtainedDisplayTime = 2f;
 
     // 新增：引用场景中玩家身上的数值中心
     private PlayerStats playerStats;
@@ -27,7 +25,6 @@ public class SkillUnlockUI : MonoBehaviour
     {
         // 隐藏提示面板
         if (skillUnlockPanel) skillUnlockPanel.SetActive(false);
-        if (itemObtainedPanel) itemObtainedPanel.SetActive(false);
 
         // 动态获取当前场景里的玩家数值脚本
         playerStats = FindAnyObjectByType<PlayerStats>();
@@ -37,7 +34,6 @@ public class SkillUnlockUI : MonoBehaviour
         {
             playerStats.OnLevelUp += HandleLevelUp;
             playerStats.OnSkillUnlocked += HandleSkillUnlocked;
-            playerStats.OnItemObtained += HandleItemObtained;
         }
 
         // 初始化UI
@@ -57,7 +53,6 @@ public class SkillUnlockUI : MonoBehaviour
         {
             playerStats.OnLevelUp -= HandleLevelUp;
             playerStats.OnSkillUnlocked -= HandleSkillUnlocked;
-            playerStats.OnItemObtained -= HandleItemObtained;
         }
     }
 
@@ -101,20 +96,4 @@ public class SkillUnlockUI : MonoBehaviour
         if (skillUnlockPanel) skillUnlockPanel.SetActive(false);
     }
 
-    void HandleItemObtained(string itemName)
-    {
-        if (itemObtainedPanel != null && itemObtainedText != null)
-        {
-            itemObtainedText.text = $"获得道具：【{itemName}】";
-            itemObtainedPanel.SetActive(true);
-            
-            CancelInvoke(nameof(HideItemObtainedPanel));
-            Invoke(nameof(HideItemObtainedPanel), itemObtainedDisplayTime);
-        }
-    }
-
-    void HideItemObtainedPanel()
-    {
-        if (itemObtainedPanel) itemObtainedPanel.SetActive(false);
-    }
 }

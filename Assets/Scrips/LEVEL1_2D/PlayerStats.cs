@@ -3,67 +3,45 @@ using System;
 
 /// <summary>
 /// 玩家数值系统：经验 / 等级 / 攻击力 / 暴击。
-/// 所有数值全部 [SerializeField] 暴露到面板。
+/// 严格按照设计文档：击杀不同敌人获得不同经验，特定等级解锁突刺。
 /// </summary>
 public class PlayerStats : MonoBehaviour
 {
-    // ────────────────── 等级与经验 ──────────────────
     [Header("=== 等级与经验 ===")]
     [SerializeField] private int currentLevel = 1;
     [SerializeField] private float currentExp = 0f;
     [SerializeField] private float baseExpToNextLevel = 100f;
-    [Tooltip("每级所需经验的增长系数")]
     [SerializeField] private float expGrowthRate = 1.15f;
-    [SerializeField] private float expMultiplier = 1f;
 
-    // ────────────────── 攻击力 ──────────────────
     [Header("=== 攻击力 ===")]
     [SerializeField] private float baseAttack = 10f;
-    [Tooltip("每级增加的攻击力")]
     [SerializeField] private float attackPerLevel = 2f;
 
-    // ────────────────── 暴击 ──────────────────
     [Header("=== 暴击 ===")]
     [SerializeField, Range(0f, 1f)] private float critChance = 0.1f;
     [SerializeField] private float critMultiplier = 1.5f;
 
-    // ────────────────── 永久道具加成 ──────────────────
-    [Header("=== 永久道具加成 ===")]
-    [SerializeField] private float expItemMultiplierBonus = 0f;
-
-    // ────────────────── 首杀奖励 ──────────────────
-    [Header("=== 首杀奖励 ===")]
-    [SerializeField] private int firstKillLevelBoost = 8;
-    [SerializeField] private float firstKillExpItemBonus = 2f;
-    private bool firstKillApplied = false;
-    private int killCount = 0;
+    [Header("=== 技能解锁条件 ===")]
+    [Tooltip("达到此等级时，Shift键会变成突刺（带有伤害）")]
+    [SerializeField] private int dashAttackUnlockLevel = 5;
 
     // ────────────────── 事件 ──────────────────
     public event Action<int> OnLevelUp;
     public event Action<string> OnSkillUnlocked;
-    public event Action<float> OnExpChanged;  // 参数: 0‑1 进度
-    public event Action<string> OnItemObtained; // 新增：通知UI拿到了道具
+    public event Action<float> OnExpChanged;
 
-    // ────────────────── 公开属性 ──────────────────
     public int CurrentLevel => currentLevel;
     public float GetExpProgress() => currentExp / GetExpToNextLevel();
-
-    // ══════════════════ 经验与升级 ══════════════════
 
     float GetExpToNextLevel()
     {
         return baseExpToNextLevel * Mathf.Pow(expGrowthRate, currentLevel - 1);
     }
 
-    /// <summary>
-    /// 添加经验（自动计算加成）
-    /// </summary>
     public void AddExp(float amount)
     {
-        float total = amount * (expMultiplier + expItemMultiplierBonus);
-        currentExp += total;
-
-        Debug.Log($"获得经验: {total:F0} (基础{amount} × {expMultiplier + expItemMultiplierBonus:F1}倍)");
+        currentExp += amount;
+        Debug.Log($"获得经验: {amount}，当前总经验: {currentExp}");
 
         float needed = GetExpToNextLevel();
         while (currentExp >= needed)
@@ -72,76 +50,35 @@ public class PlayerStats : MonoBehaviour
             LevelUp();
             needed = GetExpToNextLevel();
         }
-
         OnExpChanged?.Invoke(GetExpProgress());
     }
 
     void LevelUp()
-        {
-            int prev = currentLevel;
-            currentLevel++;
-            Debug.Log($"★ 升级！Lv.{prev} → Lv.{currentLevel}");
-            OnLevelUp?.Invoke(currentLevel);
-
-            // <--- 新增这段：特定等级触发技能解锁UI（消除警告）
-            if (currentLevel == 20)
-            {
-                OnSkillUnlocked?.Invoke("次元突刺");
-            }
-            else if (currentLevel == 50)
-            {
-                OnSkillUnlocked?.Invoke("裂口下坠 (无CD版)");
-            }
-        }
-
-    // ══════════════════ 击杀与首杀 ══════════════════
-
-    /// <summary>
-    /// 击杀敌人后由 EnemyAI 调用
-    /// </summary>
-    public void OnEnemyKilled(float baseExp)
     {
-        killCount++;
+        int prev = currentLevel;
+        currentLevel++;
+        Debug.Log($"★ 升级！Lv.{prev} → Lv.{currentLevel}");
+        OnLevelUp?.Invoke(currentLevel);
 
-        if (!firstKillApplied)
+        // 严格按照文档：达到某等级解锁突刺
+        if (currentLevel == dashAttackUnlockLevel)
         {
-            ApplyFirstKillBonus(baseExp);
-        }
-        else
-        {
-            float bonus = 1f + (killCount - 1) * 0.5f;
-            AddExp(baseExp * bonus);
-            Debug.Log($"连杀 x{killCount}！经验加成 +{(bonus - 1) * 100}%");
+            OnSkillUnlocked?.Invoke("次元突刺");
         }
     }
 
-    void ApplyFirstKillBonus(float baseExp)
-        {
-            firstKillApplied = true;
-            Debug.Log("=== 首杀奖励触发！===");
+    // 由 EnemyAI 死亡时调用
+    public void OnEnemyKilled(float baseExp)
+    {
+        AddExp(baseExp);
+    }
 
-            for (int i = 0; i < firstKillLevelBoost; i++)
-                LevelUp();
-                
-            expItemMultiplierBonus = firstKillExpItemBonus;
-            Debug.Log($"获得永久道具【次元碎片】：经验获取 +{firstKillExpItemBonus * 100}%！");
-
-            // <--- 新增这行：触发UI弹出提示
-            OnItemObtained?.Invoke("次元碎片"); 
-
-            AddExp(baseExp);
-        }
-
-    // ══════════════════ 伤害计算 ══════════════════
-
-    /// <summary>
-    /// 最终伤害 = 基础攻击力 × 暴击强度 × 技能倍率
-    /// </summary>
+    // 计算最终伤害（修复了 Random 报错）
     public float GetFinalDamage(float skillMultiplier = 1f)
     {
         float atk = baseAttack + attackPerLevel * (currentLevel - 1);
-        float crit = Random.value <= critChance ? critMultiplier : 1f;
-        float dmg = atk * crit * skillMultiplier;
-        return dmg;
+        // 明确使用 UnityEngine 的 Random
+        float crit = UnityEngine.Random.value <= critChance ? critMultiplier : 1f;
+        return atk * crit * skillMultiplier;
     }
 }
