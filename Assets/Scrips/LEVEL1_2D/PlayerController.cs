@@ -1,8 +1,13 @@
 using UnityEngine;
 using System.Collections;
 
+/// <summary>
+/// 优化版玩家控制器：包含基础移动 / 二段跳 / 冲刺 / 攻击 / 虚空钩锁 / 下坠攻击
+/// 所有数值均通过 [SerializeField] 暴露到 Inspector。
+/// </summary>
 public class PlayerController : MonoBehaviour
 {
+    // ────────────────── 基础移动 ──────────────────
     [Header("=== 基础移动 ===")]
     [SerializeField] private float moveSpeed = 8f;
     [SerializeField] private float jumpForce = 16f;
@@ -10,12 +15,14 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Transform groundCheck;
     [SerializeField] private float groundCheckRadius = 0.2f;
 
+    // ────────────────── 二段跳 (等级解锁) ──────────────────
     [Header("=== 二段跳解锁 ===")]
     [Tooltip("达到此等级后解锁二段跳")]
     [SerializeField] private int doubleJumpUnlockLevel = 3;
-    private int maxJumps = 1;
-    private int currentJumps = 0;
+    private int maxJumps = 1;      // 当前最大跳跃次数
+    private int currentJumps = 0;  // 当前已跳跃次数
 
+    // ────────────────── 冲刺 (Shift) ──────────────────
     [Header("=== 冲刺 ===")]
     [SerializeField] private float dashSpeed = 25f;
     [SerializeField] private float dashDuration = 0.2f;
@@ -23,40 +30,50 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float dashAttackWidth = 1f;
     [SerializeField] private LayerMask enemyLayer;
 
+    // ────────────────── 近战攻击 (左键) ──────────────────
     [Header("=== 近战攻击 ===")]
     [SerializeField] private float attackRange = 1.5f;
     [SerializeField] private Transform attackPoint;
     [SerializeField] private float attackCooldown = 0.35f;
 
+    // ────────────────── 虚空钩锁 (T / 右键) ──────────────────
     [Header("=== 虚空钩锁 ===")]
     [SerializeField] private float grappleSpeed = 30f;
     [SerializeField] private float grappleMaxDistance = 10f;
     [SerializeField] private float grappleArriveThreshold = 0.5f;
     [SerializeField] private LineRenderer grappleLineRenderer;
 
+    // ────────────────── 下坠攻击 (空中单压S) ──────────────────
     [Header("=== 下坠攻击 ===")]
     [SerializeField] private float diveSpeed = 45f;
     [SerializeField] private float diveAOERadius = 2f;
     [SerializeField] private float diveDamageMultiplier = 1.5f;
     [SerializeField] private float diveCooldown = 1.5f;
 
+    // ────────────────── 内部状态 ──────────────────
     private Rigidbody2D rb;
     private bool isGrounded;
     private bool isFacingRight = true;
     private float defaultGravity;
 
+    // 冲刺状态
     private bool isDashing;
     private bool canDash = true;
     public bool IsDashing => isDashing;
 
+    // 下坠状态
     public bool IsDiving { get; private set; }
     private bool canDive = true;
     private float lastAttackTime = -999f;
 
+    // 钩锁状态
     private bool isGrappling;
     private Vector2 grappleTarget;
 
+    // 引用
     private PlayerStats playerStats;
+
+    // ══════════════════ 生命周期 ══════════════════
 
     void Start()
     {
@@ -70,34 +87,39 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        // 转场中禁止操作
         if (GameManager.Instance != null && GameManager.Instance.isTransitioning)
         {
             rb.linearVelocity = Vector2.zero;
             return;
         }
 
+        // 地面检测
         isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
         
-        // 动态更新最大跳跃次数
+        // 动态更新最大跳跃次数（根据等级判断是否允许二段跳）
         maxJumps = (playerStats != null && playerStats.CurrentLevel >= doubleJumpUnlockLevel) ? 2 : 1;
         
         if (isGrounded && !IsDiving)
         {
-            currentJumps = 0; // 落地重置跳跃次数
+            currentJumps = 0; // 落地重置跳跃次数计数器
         }
 
+        // 落地后结束下坠状态 —— 触发 AOE
         if (isGrounded && IsDiving)
         {
             IsDiving = false;
             PerformDiveAOE();
         }
 
+        // 钩锁移动中处理
         if (isGrappling)
         {
             HandleGrappleMovement();
             return;
         }
 
+        // 冲刺中禁止其他操作
         if (isDashing) return;
 
         HandleMovement();
@@ -107,6 +129,8 @@ public class PlayerController : MonoBehaviour
         HandleGrappleInput();
         HandleDiveInput();
     }
+
+    // ══════════════════ 移动与跳跃 ══════════════════
 
     void HandleMovement()
     {
@@ -124,6 +148,7 @@ public class PlayerController : MonoBehaviour
 
     void HandleJump()
     {
+        // 只要当前跳跃次数未达上限，即可执行跳跃（支持二段跳逻辑）
         if (Input.GetButtonDown("Jump") && currentJumps < maxJumps)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
@@ -131,9 +156,11 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    // ══════════════════ 下坠攻击 ══════════════════
+
     void HandleDiveInput()
     {
-        // 优化1：单机S即可下坠，无需双击
+        // 优化1：在空中单击 S 键即可触发下坠，提升响应速度
         if (!isGrounded && Input.GetKeyDown(KeyCode.S) && canDive)
         {
             ActivateDive();
@@ -144,6 +171,7 @@ public class PlayerController : MonoBehaviour
     {
         IsDiving = true;
         canDive = false;
+        // 赋予向下的极高初速度
         rb.linearVelocity = new Vector2(rb.linearVelocity.x * 0.3f, -diveSpeed);
     }
 
@@ -156,7 +184,7 @@ public class PlayerController : MonoBehaviour
             EnemyAI enemy = col.GetComponent<EnemyAI>();
             if (enemy != null) enemy.TakeDamage(dmg);
         }
-        rb.linearVelocity = new Vector2(0, jumpForce * 0.5f); // 落地微弹
+        rb.linearVelocity = new Vector2(0, jumpForce * 0.5f); // 落地微量反弹，增加手感
         StartCoroutine(DiveCooldownCoroutine());
     }
 
@@ -167,6 +195,7 @@ public class PlayerController : MonoBehaviour
     }
 
     // ────────────────── 虚空钩锁逻辑 ──────────────────
+
     void HandleGrappleInput()
     {
         if (Input.GetKeyDown(KeyCode.T) || Input.GetMouseButtonDown(1))
@@ -182,14 +211,14 @@ public class PlayerController : MonoBehaviour
         Vector2 origin = transform.position;
         Vector2 dir = ((Vector2)mouseWorld - origin).normalized;
         
-        // 优化3-B & 3-G：极限距离判断
+        // 优化3-B & 3-G：根据鼠标距离截断最大范围
         float dist = Mathf.Min(Vector2.Distance(origin, mouseWorld), grappleMaxDistance);
         
-        // 优化3-A：不依赖Layer，直接算目标点
+        // 优化3-A：虚空钩锁，不依赖Layer碰撞，直接设定目标位移点
         grappleTarget = origin + dir * dist;
         
         isGrappling = true;
-        rb.gravityScale = 0;
+        rb.gravityScale = 0; // 钩锁期间无重力
 
         if (grappleLineRenderer != null)
         {
@@ -201,7 +230,7 @@ public class PlayerController : MonoBehaviour
 
     void HandleGrappleMovement()
     {
-        // 优化3-E：玩家按WASD立刻取消
+        // 优化3-E：玩家一旦按下任意移动方向键，立刻取消钩锁状态
         if (Input.GetAxisRaw("Horizontal") != 0 || Input.GetAxisRaw("Vertical") != 0)
         {
             EndGrapple();
@@ -215,15 +244,15 @@ public class PlayerController : MonoBehaviour
         if (grappleLineRenderer != null)
             grappleLineRenderer.SetPosition(0, transform.position);
 
-        // 优化3-C：到达目标点立刻下坠
+        // 优化3-C：到达虚拟目标点，执行结束逻辑
         if (Vector2.Distance(pos, grappleTarget) < grappleArriveThreshold)
         {
-            CheckPhase2Transition(grappleTarget); // 阶段二预留
+            CheckPhase2Transition(grappleTarget); // 为阶段二纸片转场预留的逻辑
             EndGrapple();
         }
     }
 
-    // 优化3-C：碰到任何带碰撞体的障碍物立刻掉落
+    // 优化3-C：在钩锁滑行过程中，如果碰到实体墙壁等障碍物，强制结束并掉落
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (isGrappling)
@@ -236,19 +265,19 @@ public class PlayerController : MonoBehaviour
     {
         isGrappling = false;
         rb.gravityScale = defaultGravity;
-        rb.linearVelocity = Vector2.zero; // 立刻下坠
+        rb.linearVelocity = Vector2.zero; // 结束后立刻开始受重力下坠
         if (grappleLineRenderer != null) grappleLineRenderer.enabled = false;
     }
 
     // 优化4：阶段二转场预留占位
     void CheckPhase2Transition(Vector2 arrivePoint)
     {
-        // TODO: 第二阶段纸片转场
-        // 检测 arrivePoint 附近是否有 "Phase2Trigger" 标签的墙壁机关
-        // 如果有，则通知 GameManager 切换状态并播放纸片特效
+        // TODO: 第二阶段纸片转场逻辑
+        // 此处应检测到达点附近是否有特殊的墙壁标签，触发转场动画
     }
 
-    // ────────────────── 冲刺与攻击 (保持不变) ──────────────────
+    // ────────────────── 冲刺与攻击 ──────────────────
+
     void HandleDash()
     {
         if (Input.GetKeyDown(KeyCode.LeftShift) && canDash) StartCoroutine(DashCoroutine());
@@ -299,6 +328,8 @@ public class PlayerController : MonoBehaviour
             if (enemy != null) enemy.TakeDamage(dmg);
         }
     }
+
+    // ────────────────── 工具方法 ──────────────────
 
     void Flip()
     {
