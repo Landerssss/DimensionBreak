@@ -56,6 +56,14 @@ public abstract class GridEntity : MonoBehaviour
     // ══════════════════ 网格同步 ══════════════════
 
     /// <summary>
+    /// 由 GridGenerator 在 Instantiate 后立即调用，设定初始网格坐标。
+    /// </summary>
+    public void InitGridPosition(Vector2Int pos)
+    {
+        gridPosition = pos;
+    }
+
+    /// <summary>
     /// 瞬间移至当前 GridPosition 的世界坐标
     /// </summary>
     public void SnapToGrid()
