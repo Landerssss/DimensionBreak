@@ -1,0 +1,367 @@
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+using System.Collections;
+
+/// <summary>
+/// Phase 3 Boss 战场景管理器。
+/// 状态机：Falling → Walking → BossRising → Fighting → End。
+/// 通过 Coroutine 驱动整个开场演出序列。
+/// 所有参数全部 [SerializeField] 暴露到面板。
+/// 
+/// 坐标系约定（纯 3D）：X = 左右，Z = 前后，Y = 上下。
+/// </summary>
+public class BossSceneManager : MonoBehaviour
+{
+    public static BossSceneManager Instance { get; private set; }
+
+    // ────────────────── 状态 ──────────────────
+    public enum BossPhase
+    {
+        Falling,     // 相机从高空下落
+        Walking,     // 玩家向前走
+        BossRising,  // Boss 从地底升起
+        Fighting,    // 战斗中
+        End          // 结束
+    }
+
+    [Header("=== 当前状态 ===")]
+    [SerializeField] private BossPhase currentPhase = BossPhase.Falling;
+    public BossPhase CurrentPhase => currentPhase;
+
+    // ────────────────── 引用 ──────────────────
+    [Header("=== 场景引用 ===")]
+    [SerializeField] private Camera mainCamera;
+    [SerializeField] private Transform playerTransform;
+    [SerializeField] private Transform bossTransform;
+    [SerializeField] private Transform walkTrigger;
+    [Tooltip("Boss 最终停留的 Y 坐标（露出上半身）")]
+    [SerializeField] private float bossTargetY = 0f;
+
+    // ────────────────── UI ──────────────────
+    [Header("=== UI 引用 ===")]
+    [SerializeField] private TextMeshProUGUI centerText;
+    [SerializeField] private Slider bossHPBar;
+    [SerializeField] private CanvasGroup bossHPBarCanvasGroup;
+
+    // ────────────────── 1. 下落参数 ──────────────────
+    [Header("=== 1. 相机下落 ===")]
+    [Tooltip("相机初始高度（Y）")]
+    [SerializeField] private float fallStartHeight = 80f;
+    [Tooltip("下落最终高度（Y）")]
+    [SerializeField] private float fallEndHeight = 2f;
+    [Tooltip("下落初始速度")]
+    [SerializeField] private float fallStartSpeed = 5f;
+    [Tooltip("下落加速度")]
+    [SerializeField] private float fallAcceleration = 30f;
+    [Tooltip("下落时相机朝向（默认看正下方）")]
+    [SerializeField] private Vector3 fallCameraRotation = new Vector3(90f, 0f, 0f);
+
+    // ────────────────── 2. 落地震动 ──────────────────
+    [Header("=== 2. 落地震动 ===")]
+    [SerializeField] private float shakeIntensity = 0.3f;
+    [SerializeField] private float shakeDuration = 0.4f;
+    [Tooltip("落地后相机平视朝前的旋转")]
+    [SerializeField] private Vector3 groundCameraRotation = new Vector3(0f, 0f, 0f);
+
+    // ────────────────── 3. 行走阶段 ──────────────────
+    [Header("=== 3. 行走阶段 ===")]
+    [SerializeField] private string walkPromptText = "往前走";
+    [SerializeField] private float playerWalkSpeed = 4f;
+
+    // ────────────────── 4. Boss 出场 ──────────────────
+    [Header("=== 4. Boss 出场 ===")]
+    [Tooltip("Boss 初始 Y（藏在地底）")]
+    [SerializeField] private float bossStartY = -15f;
+    [SerializeField] private float bossRiseSpeed = 3f;
+    [SerializeField] private string bossRisingText = "击败他！";
+    [Tooltip("Boss 出场文字显示多久后切换为血条")]
+    [SerializeField] private float textToHPBarDelay = 3f;
+
+    // ────────────────── 5. 战斗阶段 ──────────────────
+    [Header("=== 5. 战斗 ===")]
+    [SerializeField] private float bossMaxHP = 100f;
+    private float bossCurrentHP;
+    public float BossHPRatio => bossCurrentHP / bossMaxHP;
+
+    // ────────────────── 内部 ──────────────────
+    private bool playerInputLocked = true;
+    public bool IsPlayerInputLocked => playerInputLocked;
+
+    private bool walkTriggerReached;
+
+    // ══════════════════ 生命周期 ══════════════════
+
+    void Awake()
+    {
+        Instance = this;
+    }
+
+    void Start()
+    {
+        bossCurrentHP = bossMaxHP;
+        playerInputLocked = true;
+
+        // 隐藏 UI
+        if (centerText != null)
+            centerText.gameObject.SetActive(false);
+        if (bossHPBar != null && bossHPBarCanvasGroup != null)
+            bossHPBarCanvasGroup.alpha = 0f;
+
+        // Boss 藏到地底
+        if (bossTransform != null)
+        {
+            Vector3 bossPos = bossTransform.position;
+            bossPos.y = bossStartY;
+            bossTransform.position = bossPos;
+        }
+
+        // 相机放到高空
+        if (mainCamera != null)
+        {
+            Vector3 camPos = mainCamera.transform.position;
+            camPos.y = fallStartHeight;
+            mainCamera.transform.position = camPos;
+            mainCamera.transform.rotation = Quaternion.Euler(fallCameraRotation);
+        }
+
+        StartCoroutine(CinematicSequence());
+    }
+
+    void Update()
+    {
+        // 行走阶段：检测玩家手动前进
+        if (currentPhase == BossPhase.Walking && !playerInputLocked)
+        {
+            HandleWalkInput();
+        }
+    }
+
+    // ══════════════════ 演出序列主协程 ══════════════════
+
+    IEnumerator CinematicSequence()
+    {
+        // ─── 阶段 1：相机下落 ───
+        currentPhase = BossPhase.Falling;
+        yield return StartCoroutine(CameraFallSequence());
+
+        // ─── 落地震动 ───
+        yield return StartCoroutine(ScreenShake());
+
+        // ─── 相机转为平视 ───
+        yield return StartCoroutine(RotateCameraSmooth(groundCameraRotation, 0.6f));
+
+        // ─── 阶段 2：提示玩家往前走 ───
+        currentPhase = BossPhase.Walking;
+        ShowCenterText(walkPromptText);
+        playerInputLocked = false;
+
+        // 等玩家走到 Trigger
+        yield return new WaitUntil(() => walkTriggerReached);
+
+        playerInputLocked = true;
+        HideCenterText();
+
+        // ─── 阶段 3：Boss 从地底升起 ───
+        currentPhase = BossPhase.BossRising;
+        ShowCenterText(bossRisingText);
+        yield return StartCoroutine(BossRiseSequence());
+
+        // ─── 文字过渡到血条 ───
+        yield return new WaitForSeconds(textToHPBarDelay);
+        HideCenterText();
+        yield return StartCoroutine(FadeInBossHPBar(0.8f));
+
+        // ─── 阶段 4：战斗开始 ───
+        currentPhase = BossPhase.Fighting;
+        playerInputLocked = false;
+        Debug.Log("[BossSceneManager] 战斗开始！");
+    }
+
+    // ══════════════════ 1. 相机下落 ══════════════════
+
+    IEnumerator CameraFallSequence()
+    {
+        Transform camT = mainCamera.transform;
+        float speed = fallStartSpeed;
+
+        while (camT.position.y > fallEndHeight)
+        {
+            speed += fallAcceleration * Time.deltaTime;
+            Vector3 pos = camT.position;
+            pos.y -= speed * Time.deltaTime;
+            if (pos.y < fallEndHeight) pos.y = fallEndHeight;
+            camT.position = pos;
+            yield return null;
+        }
+
+        Debug.Log("[BossSceneManager] 落地！");
+    }
+
+    // ══════════════════ 2. 屏幕震动 ══════════════════
+
+    IEnumerator ScreenShake()
+    {
+        Transform camT = mainCamera.transform;
+        Vector3 originalPos = camT.position;
+        float elapsed = 0f;
+
+        while (elapsed < shakeDuration)
+        {
+            elapsed += Time.deltaTime;
+            float decay = 1f - (elapsed / shakeDuration);
+            Vector3 offset = new Vector3(
+                Random.Range(-1f, 1f) * shakeIntensity * decay,
+                Random.Range(-1f, 1f) * shakeIntensity * decay,
+                0f
+            );
+            camT.position = originalPos + offset;
+            yield return null;
+        }
+
+        camT.position = originalPos;
+    }
+
+    // ══════════════════ 相机平滑旋转 ══════════════════
+
+    IEnumerator RotateCameraSmooth(Vector3 targetEuler, float duration)
+    {
+        Transform camT = mainCamera.transform;
+        Quaternion startRot = camT.rotation;
+        Quaternion endRot = Quaternion.Euler(targetEuler);
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            camT.rotation = Quaternion.Slerp(startRot, endRot, elapsed / duration);
+            yield return null;
+        }
+        camT.rotation = endRot;
+    }
+
+    // ══════════════════ 3. 玩家行走 ══════════════════
+
+    void HandleWalkInput()
+    {
+        if (playerTransform == null) return;
+
+        float z = Input.GetAxisRaw("Vertical");
+        float x = Input.GetAxisRaw("Horizontal");
+
+        Vector3 move = new Vector3(x, 0f, z).normalized * playerWalkSpeed * Time.deltaTime;
+        playerTransform.position += move;
+
+        // 相机跟随（简单偏移）
+        if (mainCamera != null)
+        {
+            Vector3 camPos = mainCamera.transform.position;
+            camPos.x = playerTransform.position.x;
+            camPos.z = playerTransform.position.z - 5f; // 跟在玩家身后
+            mainCamera.transform.position = camPos;
+        }
+    }
+
+    /// <summary>
+    /// 由行走阶段的隐形 Trigger 调用
+    /// </summary>
+    public void OnWalkTriggerReached()
+    {
+        walkTriggerReached = true;
+        Debug.Log("[BossSceneManager] 玩家到达行走触发点");
+    }
+
+    // ══════════════════ 4. Boss 升起 ══════════════════
+
+    IEnumerator BossRiseSequence()
+    {
+        if (bossTransform == null) yield break;
+
+        while (bossTransform.position.y < bossTargetY)
+        {
+            Vector3 pos = bossTransform.position;
+            pos.y += bossRiseSpeed * Time.deltaTime;
+            if (pos.y > bossTargetY) pos.y = bossTargetY;
+            bossTransform.position = pos;
+            yield return null;
+        }
+
+        Debug.Log("[BossSceneManager] Boss 出场完毕！");
+    }
+
+    // ══════════════════ Boss 血条 ══════════════════
+
+    IEnumerator FadeInBossHPBar(float duration)
+    {
+        if (bossHPBarCanvasGroup == null) yield break;
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            bossHPBarCanvasGroup.alpha = Mathf.Lerp(0f, 1f, elapsed / duration);
+            yield return null;
+        }
+        bossHPBarCanvasGroup.alpha = 1f;
+
+        if (bossHPBar != null)
+            bossHPBar.value = 1f;
+    }
+
+    /// <summary>
+    /// Boss 受击时由外部调用来扣血并更新血条。
+    /// </summary>
+    public void DamageBoss(float damage)
+    {
+        if (currentPhase != BossPhase.Fighting) return;
+
+        bossCurrentHP -= damage;
+        if (bossCurrentHP < 0f) bossCurrentHP = 0f;
+
+        if (bossHPBar != null)
+            bossHPBar.value = BossHPRatio;
+
+        Debug.Log($"Boss 受击 -{damage:F0}，剩余 {bossCurrentHP:F0}/{bossMaxHP:F0}");
+
+        if (bossCurrentHP <= 0f)
+        {
+            OnBossDefeated();
+        }
+    }
+
+    void OnBossDefeated()
+    {
+        currentPhase = BossPhase.End;
+        playerInputLocked = true;
+
+        Debug.Log("[BossSceneManager] Boss 已被击败！次元突破通关！");
+
+        ShowCenterText("次元突破！");
+
+        // TODO: 播放最终演出动画，然后回到主菜单或结算画面
+        StartCoroutine(EndSequence());
+    }
+
+    IEnumerator EndSequence()
+    {
+        yield return new WaitForSeconds(4f);
+
+        if (GameManager.Instance != null)
+            GameManager.Instance.ReturnToMenu();
+    }
+
+    // ══════════════════ UI 工具 ══════════════════
+
+    void ShowCenterText(string text)
+    {
+        if (centerText == null) return;
+        centerText.text = text;
+        centerText.gameObject.SetActive(true);
+    }
+
+    void HideCenterText()
+    {
+        if (centerText != null)
+            centerText.gameObject.SetActive(false);
+    }
+}
