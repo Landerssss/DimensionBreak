@@ -127,6 +127,7 @@ public class GridManager : MonoBehaviour
 
     void OnDrawGizmos()
     {
+        Debug.Log("Drawing Grid Gizmos");
         Gizmos.color = new Color(1f, 1f, 1f, 0.3f);
 
         for (int x = 0; x < WIDTH; x++)
