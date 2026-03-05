@@ -112,6 +112,11 @@ public class GridGenerator : MonoBehaviour
         }
         spawnedObjects.Clear();
     }
+    void Start()
+    {
+        // 延迟0.1秒生成，确保各种 Manager 都已经初始化完毕
+        Invoke(nameof(GenerateLevel), 0.1f);
+    }
 
     // ══════════════════ 内部方法 ══════════════════
 
