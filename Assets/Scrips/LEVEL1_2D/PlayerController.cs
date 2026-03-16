@@ -83,6 +83,14 @@ public class PlayerController : MonoBehaviour
 
         if (grappleLineRenderer != null)
             grappleLineRenderer.enabled = false;
+
+        // Phase 2 失败 / 通关返回 Phase 1 → 恢复之前的坐标
+        if (GameManager.Instance != null && GameManager.Instance.hasSavedPhase1Position)
+        {
+            transform.position = GameManager.Instance.savedPhase1Position;
+            GameManager.Instance.hasSavedPhase1Position = false;
+            Debug.Log("[PlayerController] 已恢复 Phase 1 坐标");
+        }
     }
 
     void Update()

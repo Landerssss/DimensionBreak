@@ -112,7 +112,11 @@ public class PaperPlayer : GridEntity
     void OnReachExit()
     {
         Debug.Log("纸片玩家到达出口！Phase 2 通关！");
-        // TODO: 播放通关转场 → 进入 Phase 3
+
+        if (GameManager.Instance != null)
+            GameManager.Instance.OnPhase2Victory();
+        else
+            UnityEngine.SceneManagement.SceneManager.LoadScene(failSceneName);
     }
 
     protected override void OnDestroy()

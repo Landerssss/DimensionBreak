@@ -8,11 +8,12 @@ using System.Collections.Generic;
 /// </summary>
 public class Turret : GridEntity
 {
-    // ────────────────── 射击视觉 ──────────────────
+    // ────────────────── 射击配置 ──────────────────
     [Header("=== 射击表现 ===")]
-    [Tooltip("子弹 Prefab（可选，仅用于视觉）")]
-    [SerializeField] private GameObject bulletPrefab;
-    [SerializeField] private float bulletTravelTime = 0.2f;
+    [Tooltip("炮弹 Prefab（挂载 TurretProjectile 脚本的空物体，可为空则自动创建）")]
+    [SerializeField] private GameObject projectilePrefab;
+    [Tooltip("炮弹飞行速度")]
+    [SerializeField] private float projectileSpeed = 5f;
     [Tooltip("射击时炮台的缩放反馈幅度")]
     [SerializeField] private float recoilScale = 0.1f;
     [SerializeField] private float recoilDuration = 0.15f;
@@ -49,11 +50,11 @@ public class Turret : GridEntity
 
         Debug.Log($"炮台 {gameObject.name} 向 {target.gameObject.name} 开火！");
 
-        // 命中
-        target.TakeHit();
+        // 生成炮弹（伤害由炮弹到达后执行）
+        SpawnProjectile(target);
 
-        // 视觉反馈
-        StartCoroutine(FireVisual(target));
+        // 后坐力视觉反馈
+        StartCoroutine(RecoilVisual());
     }
 
     /// <summary>
@@ -82,35 +83,39 @@ public class Turret : GridEntity
         return closest;
     }
 
-    // ══════════════════ 射击视觉 ══════════════════
+    // ══════════════════ 炮弹生成 ══════════════════
 
-    System.Collections.IEnumerator FireVisual(PaperEnemy target)
+    void SpawnProjectile(PaperEnemy target)
     {
-        // 后座力缩放
+        GameObject projObj;
+
+        if (projectilePrefab != null)
+        {
+            projObj = Instantiate(projectilePrefab, transform.position, Quaternion.identity);
+        }
+        else
+        {
+            // 没有 Prefab 时自动创建一个空物体挂 TurretProjectile
+            projObj = new GameObject("TurretProjectile_Auto");
+            projObj.transform.position = transform.position;
+            projObj.AddComponent<TurretProjectile>();
+        }
+
+        TurretProjectile proj = projObj.GetComponent<TurretProjectile>();
+        if (proj == null)
+            proj = projObj.AddComponent<TurretProjectile>();
+
+        proj.Init(target, projectileSpeed);
+    }
+
+    // ══════════════════ 后坐力视觉 ══════════════════
+
+    System.Collections.IEnumerator RecoilVisual()
+    {
         Vector3 original = baseScale;
         transform.localScale = baseScale - Vector3.one * recoilScale;
         yield return new WaitForSeconds(recoilDuration);
         transform.localScale = original;
-
-        // 简易子弹飞行（如有 Prefab）
-        if (bulletPrefab != null && target != null)
-        {
-            Vector3 startPos = transform.position;
-            Vector3 endPos = target.transform.position;
-
-            GameObject bullet = Instantiate(bulletPrefab, startPos, Quaternion.identity);
-
-            float elapsed = 0f;
-            while (elapsed < bulletTravelTime)
-            {
-                elapsed += Time.deltaTime;
-                float t = elapsed / bulletTravelTime;
-                bullet.transform.position = Vector3.Lerp(startPos, endPos, t);
-                yield return null;
-            }
-
-            Destroy(bullet);
-        }
     }
 
     // ══════════════════ 被碾压销毁 ══════════════════

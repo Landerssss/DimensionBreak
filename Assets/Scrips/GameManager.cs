@@ -55,6 +55,17 @@ public class GameManager : MonoBehaviour
     public bool BowUnlocked => bowUnlocked;
     public bool WaterBombUnlocked => waterBombUnlocked;
 
+    // ────────────────── Phase 1 坐标保存（用于 Phase 2 失败后返回原地） ──────────────────
+    [HideInInspector] public Vector3 savedPhase1Position;
+    [HideInInspector] public bool hasSavedPhase1Position = false;
+
+    public void SavePhase1Position(Vector3 pos)
+    {
+        savedPhase1Position = pos;
+        hasSavedPhase1Position = true;
+        Debug.Log($"[GameManager] 已保存 Phase 1 坐标: {pos}");
+    }
+
     // ────────────────── 当前武器 ──────────────────
     public enum WeaponType { Melee, Bow, WaterBomb }
     private WeaponType currentWeapon = WeaponType.Melee;
