@@ -14,7 +14,7 @@ public class PlayerAnimator : MonoBehaviour
     private static readonly int aTrig = Animator.StringToHash("attack");
     private static readonly int hurtTrig   = Animator.StringToHash("hurt");
     private static readonly int dieTrig    = Animator.StringToHash("die");
-    private static readonly int LookUpTrig = Animator.StringToHash("isLookup");
+    private static readonly int LookUpTrig = Animator.StringToHash("isLookUp");
 
     void Start()
     {
