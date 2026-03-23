@@ -11,7 +11,7 @@ public class PlayerController : MonoBehaviour
     [Header("=== 基础移动 ===")]
     [SerializeField] private float moveSpeed = 8f;
     [SerializeField] private float jumpForce = 16f;
-    [SerializeField] private LayerMask groundLayer;
+    [SerializeField] public LayerMask groundLayer;  //改为公有
     [SerializeField] public Transform groundCheck;
     [SerializeField] private float groundCheckRadius = 0.2f;
 
