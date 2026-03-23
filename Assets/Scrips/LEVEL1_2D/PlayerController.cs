@@ -12,7 +12,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float moveSpeed = 8f;
     [SerializeField] private float jumpForce = 16f;
     [SerializeField] private LayerMask groundLayer;
-    [SerializeField] private Transform groundCheck;
+    [SerializeField] public Transform groundCheck;
     [SerializeField] private float groundCheckRadius = 0.2f;
 
     // ────────────────── 二段跳 (等级解锁) ──────────────────
