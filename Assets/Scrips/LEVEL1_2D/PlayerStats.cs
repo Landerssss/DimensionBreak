@@ -1,12 +1,22 @@
 using UnityEngine;
 using System;
+using System.Collections;
 
 /// <summary>
-/// 玩家数值系统：经验 / 等级 / 攻击力 / 暴击。
+/// 玩家数值系统：生命值 / 经验 / 等级 / 攻击力 / 暴击。
 /// 严格按照设计文档：击杀不同敌人获得不同经验，特定等级解锁突刺。
 /// </summary>
 public class PlayerStats : MonoBehaviour
 {
+    // ────────────────── 生命值 ──────────────────
+    [Header("=== 生命值 ===")]
+    [SerializeField] private float maxHP = 100f;
+    private float currentHP;
+
+    [Tooltip("受击时颜色闪红的持续时间")]
+    [SerializeField] private float hitFlashDuration = 0.15f;
+
+    // ────────────────── 等级与经验 ──────────────────
     [Header("=== 等级与经验 ===")]
     [SerializeField] private int currentLevel = 1;
     [SerializeField] private float currentExp = 0f;
@@ -30,12 +40,74 @@ public class PlayerStats : MonoBehaviour
     public event Action<string> OnSkillUnlocked;
     public event Action<float> OnExpChanged;
 
+    // 生命值属性（供 UI 读取）
+    public float CurrentHP => currentHP;
+    public float MaxHP => maxHP;
+    public float GetHPProgress() => maxHP > 0 ? currentHP / maxHP : 0f;
+
     public int CurrentLevel => currentLevel;
     public float GetExpProgress() => currentExp / GetExpToNextLevel();
+
+    // ────────────────── 私有引用 ──────────────────
+    private SpriteRenderer spriteRenderer;
+
+    // ══════════════════ 生命周期 ══════════════════
+
+    void Awake()
+    {
+        // 初始化生命值
+        currentHP = maxHP;
+        spriteRenderer = GetComponent<SpriteRenderer>();
+    }
 
     float GetExpToNextLevel()
     {
         return baseExpToNextLevel * Mathf.Pow(expGrowthRate, currentLevel - 1);
+    }
+
+    // ══════════════════ 生命值 ══════════════════
+
+    /// <summary>
+    /// 玩家受到伤害：减少 HP，闪红反馈，HP 归零时触发死亡重来逻辑。
+    /// 由 EnemyAI 攻击时调用。
+    /// </summary>
+    public void TakeDamage(float damage)
+    {
+        if (damage <= 0) return;
+
+        currentHP -= damage;
+        currentHP = Mathf.Max(currentHP, 0f);
+        Debug.Log($"玩家受到 {damage:F0} 伤害，剩余 HP: {currentHP:F0}");
+
+        // 颜色闪红反馈
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = Color.red;
+            StartCoroutine(ResetColorAfter(hitFlashDuration));
+        }
+
+        if (currentHP <= 0f)
+        {
+            OnPlayerDied();
+        }
+    }
+
+    private IEnumerator ResetColorAfter(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (spriteRenderer != null)
+            spriteRenderer.color = Color.white;
+    }
+
+    /// <summary>
+    /// 玩家死亡逻辑：可在此扩展重载关卡、显示 UI 等。
+    /// </summary>
+    private void OnPlayerDied()
+    {
+        Debug.Log("玩家死亡！触发重来逻辑...");
+        // TODO: 触发死亡动画、显示死亡 UI、重载场景等
+        // 示例：UnityEngine.SceneManagement.SceneManager.LoadScene(
+        //     UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex);
     }
 
     public void AddExp(float amount)

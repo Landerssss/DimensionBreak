@@ -53,6 +53,11 @@ public class EnemyAI : MonoBehaviour
     [Tooltip("死亡动画播放后等待多久再销毁物体")]
     [SerializeField] private float deathDestroyDelay = 1.5f;
 
+    // ────────────────── 精灵朝向 ──────────────────
+    [Header("=== 精灵朝向 ===")]
+    [Tooltip("勾选此项表示素材默认朝向为左（即 dir>0 时需要 flipX=true）")]
+    [SerializeField] private bool defaultFacingLeft = false;
+
     // ────────────────── 碰撞层 ──────────────────
     [Header("=== 环境碰撞 ===")]
     [Tooltip("墙壁/障碍物所在的图层，用于巡逻时碰壁转向")]
@@ -388,8 +393,13 @@ public class EnemyAI : MonoBehaviour
 
     void FaceDirection(int dir)
     {
-        if (spriteRenderer != null)
-            spriteRenderer.flipX = dir < 0;
+        if (spriteRenderer == null) return;
+
+        // 若素材默认朝左，朝右时需要翻转；反之亦然
+        if (defaultFacingLeft)
+            spriteRenderer.flipX = dir > 0;  // 素材朝左：向右走时才 flip
+        else
+            spriteRenderer.flipX = dir < 0;  // 素材朝右（默认）：向左走时才 flip
     }
 
     void OnDrawGizmosSelected()
