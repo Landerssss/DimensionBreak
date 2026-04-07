@@ -2305,64 +2305,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!1 &1199180282
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1199180284}
-  - component: {fileID: 1199180283}
-  m_Layer: 0
-  m_Name: GameManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1199180283
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1199180282}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9608054f7ef89044daf768cd71b1ed4c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  currentPhase: 0
-  mainMenuScene: MainMenu
-  phase1Scene: Level1_2D
-  phase2Scene: Level2_GridPuzzle
-  phase3Scene: Level3_Boss
-  isTransitioning: 0
-  transitionDelay: 1
-  phase2ClearedCount: 0
-  firstClearExp: 500
-  thirdClearExp: 2000
-  bowUnlocked: 0
-  waterBombUnlocked: 0
-  savedPhase1Position: {x: 0, y: 0, z: 0}
-  hasSavedPhase1Position: 0
---- !u!4 &1199180284
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1199180282}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.8024528, y: -5.032462, z: 0.014294091}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1229250455
 GameObject:
   m_ObjectHideFlags: 0
@@ -8437,6 +8379,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy
       objectReference: {fileID: 0}
+    - target: {fileID: 6775737461407953378, guid: 891cc522659377845ae44e9b306a8571, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6845398981166526107, guid: 891cc522659377845ae44e9b306a8571, type: 3}
       propertyPath: m_Size.x
       value: 0.35446358
@@ -8724,7 +8670,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3694169030906918457, guid: 329d0fff558d5fa42a13ad9d7d22a235, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.85
+      value: 10.8
       objectReference: {fileID: 0}
     - target: {fileID: 3694169030906918457, guid: 329d0fff558d5fa42a13ad9d7d22a235, type: 3}
       propertyPath: m_LocalPosition.y
@@ -8768,7 +8714,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6193933780508421891, guid: 329d0fff558d5fa42a13ad9d7d22a235, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8873,7 +8819,6 @@ SceneRoots:
   - {fileID: 619394802}
   - {fileID: 1708815866}
   - {fileID: 1053377475}
-  - {fileID: 1199180284}
   - {fileID: 1335533498}
   - {fileID: 1753117253}
   - {fileID: 507062946}
