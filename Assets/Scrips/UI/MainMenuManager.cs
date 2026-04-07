@@ -420,6 +420,7 @@ public class MainMenuManager : MonoBehaviour
         }
 
         yield return new WaitForSeconds(delayAfterZoom);
+        Debug.Log($"等待完成，GameManager.Instance = {GameManager.Instance}"); 
 
         if (GameManager.Instance != null)
         {

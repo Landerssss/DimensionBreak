@@ -2334,7 +2334,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9608054f7ef89044daf768cd71b1ed4c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentPhase: 1
+  currentPhase: 0
   mainMenuScene: MainMenu
   phase1Scene: Level1_2D
   phase2Scene: Level2_GridPuzzle
