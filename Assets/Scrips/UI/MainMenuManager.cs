@@ -91,7 +91,7 @@ public class MainMenuManager : MonoBehaviour
     [SerializeField] private Button quitNoButton;
 
     // ────────────────── 功能按钮 (Day) ──────────────────
-    [Header("=== 开始游戏 (Day 状态) ===")]
+    [Header("=== 开始游戏 (Night 状态) ===")]
     [SerializeField] private Button startGameButton;
 
     // ────────────────── 转场效果（开始游戏） ──────────────────
@@ -345,7 +345,7 @@ public class MainMenuManager : MonoBehaviour
             settingsContainer.SetActive(state == MenuState.Day);
 
         if (startGameButton != null)
-            startGameButton.gameObject.SetActive(state == MenuState.Day);
+            startGameButton.gameObject.SetActive(state == MenuState.Night);
 
         // 退出弹窗仅在 Dusk 状态时自动显示
         if (quitConfirmPanel != null)
@@ -390,7 +390,7 @@ public class MainMenuManager : MonoBehaviour
     //  功能回调
     // ═══════════════════════════════════════════════
 
-    // ────────────────── 开始游戏 (Day 状态) ──────────────────
+    // ────────────────── 开始游戏 (Night 状态) ──────────────────
 
     void OnStartGame()
     {
