@@ -10,7 +10,16 @@ using System;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
-
+#if UNITY_EDITOR
+[ContextMenu("DEBUG: Unlock All Weapons")]
+public void DebugUnlockAll()
+{
+    bowUnlocked = true;
+    waterBombUnlocked = true;
+    OnWeaponUnlocked?.Invoke("弓箭");
+    OnWeaponUnlocked?.Invoke("水魔爆");
+}
+#endif
     // ────────────────── 游戏阶段 ──────────────────
     public enum GamePhase
     {
