@@ -262,7 +262,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 334a520e5cad1694480135ff82f47b50, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  phaseDelay: 0.35
+  phaseDelay: 0
   player: {fileID: 0}
 --- !u!114 &330239094
 MonoBehaviour:
