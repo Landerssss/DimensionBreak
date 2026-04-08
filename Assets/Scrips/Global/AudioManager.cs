@@ -4,7 +4,7 @@ public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance;
 
-    [SerializeField] private AudioClip bgmClip;  // ← 这个字段可以直接拖入音频文件
+    [SerializeField] private AudioClip bgmClip;
     private AudioSource audioSource;
 
     void Awake()
@@ -29,5 +29,19 @@ public class AudioManager : MonoBehaviour
             audioSource.loop = true;
             audioSource.Play();
         }
+    }
+
+    // 切换音乐
+    public void PlayBGM(AudioClip clip)
+    {
+        if (clip == null || audioSource.clip == clip) return; // 已经在播放同一首就不重复
+        audioSource.clip = clip;
+        audioSource.loop = true;
+        audioSource.Play();
+    }
+
+    public void StopBGM()
+    {
+        audioSource.Stop();
     }
 }

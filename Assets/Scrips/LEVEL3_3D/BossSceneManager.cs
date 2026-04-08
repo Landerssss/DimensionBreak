@@ -71,16 +71,16 @@ public class BossSceneManager : MonoBehaviour
 
     // ────────────────── 4. Boss 出场 ──────────────────
     [Header("=== 4. Boss 出场 ===")]
-    [Tooltip("Boss 初始 Y（藏在地底）")]
-    [SerializeField] private float bossStartY = -15f;
-    [SerializeField] private float bossRiseSpeed = 3f;
+    [Tooltip("Boss 起始位置（远处高空）")]
+    [SerializeField] private Vector3 bossStartOffset = new Vector3(0f, 30f, 80f); // 正前方远处高空
+    [SerializeField] private float bossFlyDuration = 3f;       // 飞行时长
+    [SerializeField] private float bossFlyRotateSpeed = 180f;  // 飞行时旋转速度
     [SerializeField] private string bossRisingText = "击败他！";
-    [Tooltip("Boss 出场文字显示多久后切换为血条")]
     [SerializeField] private float textToHPBarDelay = 3f;
 
     // ────────────────── 5. 战斗阶段 ──────────────────
     [Header("=== 5. 战斗 ===")]
-    [SerializeField] private float bossMaxHP = 100f;
+    [SerializeField] private float bossMaxHP = 1000f;
     private float bossCurrentHP;
     public float BossHPRatio => bossCurrentHP / bossMaxHP;
 
@@ -89,6 +89,7 @@ public class BossSceneManager : MonoBehaviour
     public bool IsPlayerInputLocked => playerInputLocked;
 
     private bool walkTriggerReached;
+    private Vector3 bossStartPosition; // Boss 最终落点
 
     // ══════════════════ 生命周期 ══════════════════
 
@@ -108,12 +109,11 @@ public class BossSceneManager : MonoBehaviour
         if (bossHPBar != null && bossHPBarCanvasGroup != null)
             bossHPBarCanvasGroup.alpha = 0f;
 
-        // Boss 藏到地底
+        // Boss 放到远处高空
         if (bossTransform != null)
         {
-            Vector3 bossPos = bossTransform.position;
-            bossPos.y = bossStartY;
-            bossTransform.position = bossPos;
+            bossStartPosition = bossTransform.position; // 记录最终落点
+            bossTransform.position = bossStartPosition + bossStartOffset;
         }
 
         // 相机放到高空
@@ -277,14 +277,30 @@ public class BossSceneManager : MonoBehaviour
     {
         if (bossTransform == null) yield break;
 
-        while (bossTransform.position.y < bossTargetY)
+        Vector3 startPos = bossTransform.position;
+        Vector3 endPos = bossStartPosition;
+        float elapsed = 0f;
+
+        while (elapsed < bossFlyDuration)
         {
-            Vector3 pos = bossTransform.position;
-            pos.y += bossRiseSpeed * Time.deltaTime;
-            if (pos.y > bossTargetY) pos.y = bossTargetY;
-            bossTransform.position = pos;
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / bossFlyDuration); // 先快后慢
+
+            // 位置插值
+            bossTransform.position = Vector3.Lerp(startPos, endPos, t);
+
+            // 飞行旋转（翻滚感）
+            bossTransform.Rotate(0f, bossFlyRotateSpeed * Time.deltaTime, 0f, Space.World);
+
             yield return null;
         }
+
+        // 落地：强制到终点，重置旋转
+        bossTransform.position = endPos;
+        bossTransform.rotation = Quaternion.identity;
+
+        // 落地震动
+        yield return StartCoroutine(ScreenShake());
 
         Debug.Log("[BossSceneManager] Boss 出场完毕！");
     }
