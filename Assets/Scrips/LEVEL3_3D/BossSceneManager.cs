@@ -297,7 +297,7 @@ public class BossSceneManager : MonoBehaviour
 
         // 落地：强制到终点，重置旋转
         bossTransform.position = endPos;
-        bossTransform.rotation = Quaternion.identity;
+        bossTransform.rotation = Quaternion.Euler(0f, 180f, 0f);
 
         // 落地震动
         yield return StartCoroutine(ScreenShake());

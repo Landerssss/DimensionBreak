@@ -17,6 +17,12 @@ public class Phase1To2Trigger : MonoBehaviour
     [SerializeField] private float hintDuration = 2.5f;
     [SerializeField] private string enterMessage = "正在进入纸片空间...";
 
+    [Header("=== 视觉反馈 ===")]
+    [Tooltip("当前机关的 SpriteRenderer，触发后将替换为暗色贴图")]
+    [SerializeField] private SpriteRenderer targetSpriteRenderer;
+    [Tooltip("触发后显示的暗色贴图")]
+    [SerializeField] private Sprite darkenedSprite;
+
     // 防止重复触发
     private bool triggered;
 
@@ -24,6 +30,15 @@ public class Phase1To2Trigger : MonoBehaviour
     {
         if (hintText != null)
             hintText.gameObject.SetActive(false);
+
+        // 持久化状态检查：若玩家已进入过 Phase 2，恢复已触发状态
+        if (GameManager.Instance != null && GameManager.Instance.hasEnteredPhase2)
+        {
+            triggered = true;
+            ApplyDarkenedSprite();
+            var col = GetComponent<Collider2D>();
+            if (col != null) col.enabled = false;
+        }
     }
 
     /// <summary>
@@ -44,6 +59,7 @@ public class Phase1To2Trigger : MonoBehaviour
         return;
 
         triggered = true;
+        ApplyDarkenedSprite();
         Debug.Log("[Phase1To2Trigger] 玩家进入触发区，准备转场至 Phase 2！");
 
         // 保存玩家在 Phase 1 的坐标，以便 Phase 2 失败后返回原地
@@ -80,5 +96,14 @@ public class Phase1To2Trigger : MonoBehaviour
     {
         if (hintText != null)
             hintText.gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// 将 targetSpriteRenderer 的贴图替换为暗色版本（仅在两者均不为空时执行）。
+    /// </summary>
+    void ApplyDarkenedSprite()
+    {
+        if (targetSpriteRenderer != null && darkenedSprite != null)
+            targetSpriteRenderer.sprite = darkenedSprite;
     }
 }
