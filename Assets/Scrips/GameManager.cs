@@ -63,6 +63,7 @@ public void DebugUnlockAll()
     [SerializeField] private bool waterBombUnlocked = false;
     public bool BowUnlocked => bowUnlocked;
     public bool WaterBombUnlocked => waterBombUnlocked;
+    public bool hasEnteredPhase2 = false;
 
     // ────────────────── Phase 1 坐标保存（用于 Phase 2 失败后返回原地） ──────────────────
     [HideInInspector] public Vector3 savedPhase1Position;

@@ -40,6 +40,8 @@ public class Phase1To2Trigger : MonoBehaviour
     {
         if (triggered) return;
         if (!other.CompareTag("Player")) return;
+        if (GameManager.Instance != null && GameManager.Instance.hasEnteredPhase2)
+        return;
 
         triggered = true;
         Debug.Log("[Phase1To2Trigger] 玩家进入触发区，准备转场至 Phase 2！");

@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 36163ff31a108bb48bb85c8c34392453
+guid: a5a958d203527e24da45626291378fcb
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 7647472560010921891
-    second: Traingle_0
+      213: 9212275650587600386
+    second: Light_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -126,13 +126,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Traingle_0
+      name: Light_0
       rect:
         serializedVersion: 2
-        x: 3
+        x: 0
         y: 0
-        width: 1524
-        height: 1024
+        width: 2741
+        height: 1529
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +141,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3a78ff876c7412a60800000000000000
-      internalID: 7647472560010921891
+      spriteID: 206214e35e398df70800000000000000
+      internalID: 9212275650587600386
       vertices: []
       indices: 
       edges: []
@@ -160,8 +160,7 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable:
-      Traingle_0: 7647472560010921891
+    nameFileIdTable: {}
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
