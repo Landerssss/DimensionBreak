@@ -2,21 +2,32 @@ using UnityEngine;
 
 public class AudioManager : MonoBehaviour
 {
-    private static AudioManager instance;
+    public static AudioManager Instance;
+
+    [SerializeField] private AudioClip bgmClip;  // ← 这个字段可以直接拖入音频文件
+    private AudioSource audioSource;
 
     void Awake()
     {
-        // 检查是否已有实例存在
-        if (instance == null)
+        if (Instance == null)
         {
-            instance = this;
-            // 关键：切换场景时不销毁此物体
+            Instance = this;
             DontDestroyOnLoad(gameObject);
+            audioSource = GetComponent<AudioSource>();
         }
         else
         {
-            // 如果场景中重复出现了 AudioManager，直接销毁掉
             Destroy(gameObject);
+        }
+    }
+
+    void Start()
+    {
+        if (bgmClip != null)
+        {
+            audioSource.clip = bgmClip;
+            audioSource.loop = true;
+            audioSource.Play();
         }
     }
 }
