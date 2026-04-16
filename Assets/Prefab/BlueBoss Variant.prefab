@@ -42,7 +42,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 409426, guid: 20a769104331d8b48ac7d1ea0d49cdf3, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 409426, guid: 20a769104331d8b48ac7d1ea0d49cdf3, type: 3}
       propertyPath: m_LocalRotation.x
@@ -50,7 +50,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 409426, guid: 20a769104331d8b48ac7d1ea0d49cdf3, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 409426, guid: 20a769104331d8b48ac7d1ea0d49cdf3, type: 3}
       propertyPath: m_LocalRotation.z
@@ -62,7 +62,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 409426, guid: 20a769104331d8b48ac7d1ea0d49cdf3, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 180
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 409426, guid: 20a769104331d8b48ac7d1ea0d49cdf3, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
@@ -235,11 +235,12 @@ MonoBehaviour:
   groundCameraRotation: {x: 0, y: 0, z: 0}
   walkPromptText: "\u5F80\u524D\u8D70"
   playerWalkSpeed: 4
-  bossStartY: -15
-  bossRiseSpeed: 3
+  bossStartOffset: {x: 0, y: 30, z: 80}
+  bossFlyDuration: 3
+  bossFlyRotateSpeed: 180
   bossRisingText: "\u51FB\u8D25\u4ED6\uFF01"
   textToHPBarDelay: 3
-  bossMaxHP: 100
+  bossMaxHP: 1000
 --- !u!114 &6417343765964096306
 MonoBehaviour:
   m_ObjectHideFlags: 0
