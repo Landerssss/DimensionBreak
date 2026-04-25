@@ -7454,6 +7454,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: BlueBoss
       objectReference: {fileID: 0}
+    - target: {fileID: 5786818240996251267, guid: ac68fea4943a9e04c8b28c022af05e9c, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7772949056658537784, guid: ac68fea4943a9e04c8b28c022af05e9c, type: 3}
       propertyPath: playerTransform
       value: 
