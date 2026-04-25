@@ -53,6 +53,13 @@ public class EnemyAI : MonoBehaviour
     [Tooltip("死亡动画播放后等待多久再销毁物体")]
     [SerializeField] private float deathDestroyDelay = 1.5f;
 
+    // ────────────────── 掉落物品 ──────────────────
+    [Header("=== 掉落物品 ===")]
+    [Tooltip("血瓶预制体")]
+    [SerializeField] private GameObject healthPotionPrefab;
+    [Tooltip("掉落血瓶的概率 (0.0 到 1.0)")]
+    [SerializeField] private float dropPotionChance = 0.2f;
+
     // ────────────────── 精灵朝向 ──────────────────
     [Header("=== 精灵朝向 ===")]
     [Tooltip("勾选此项表示素材默认朝向为左（即 dir>0 时需要 flipX=true）")]
@@ -367,6 +374,13 @@ public class EnemyAI : MonoBehaviour
         if (stats != null)
         {
             stats.OnEnemyKilled(expReward);
+        }
+
+        // 掉落：概率实例化血瓶
+        if (healthPotionPrefab != null && Random.value <= dropPotionChance)
+        {
+            Instantiate(healthPotionPrefab, transform.position, Quaternion.identity);
+            Debug.Log($"{gameObject.name} 掉落了血瓶！");
         }
 
         // ④ 如果被突刺击杀，重置玩家冲刺 CD

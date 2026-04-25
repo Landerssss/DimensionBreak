@@ -1,13 +1,19 @@
 using UnityEngine;
+using UnityEngine.UI;
 using System;
 using System.Collections;
 
 /// <summary>
-/// 玩家数值系统：生命值 / 经验 / 等级 / 攻击力 / 暴击。
+/// 玩家数值系统：生命值 / 蓝量 / 经验 / 等级 / 攻击力 / 暴击。
 /// 严格按照设计文档：击杀不同敌人获得不同经验，特定等级解锁突刺。
 /// </summary>
 public class PlayerStats : MonoBehaviour
 {
+    // ────────────────── UI Slider ──────────────────
+    [Header("=== UI Slider ===")]
+    [SerializeField] private Slider hpSlider;
+    [SerializeField] private Slider mpSlider;
+
     // ────────────────── 生命值 ──────────────────
     [Header("=== 生命值 ===")]
     [SerializeField] private float maxHP = 100f;
@@ -15,6 +21,16 @@ public class PlayerStats : MonoBehaviour
 
     [Tooltip("受击时颜色闪红的持续时间")]
     [SerializeField] private float hitFlashDuration = 0.15f;
+
+    // ────────────────── 蓝量（Mana）──────────────────
+    [Header("=== 蓝量（Mana）===")]
+    [SerializeField] private float maxMP = 100f;
+    private float currentMP;
+
+    /// <summary>蓝条自然回复计时器（每 10 秒回复 MaxMP/5）</summary>
+    private float mpRegenTimer = 0f;
+    private const float MP_REGEN_INTERVAL = 10f;   // 回复周期（秒）
+    private const float MP_REGEN_RATIO   = 0.2f;  // 每次回复量 = MaxMP × 20%
 
     // ────────────────── 等级与经验 ──────────────────
     [Header("=== 等级与经验 ===")]
@@ -41,11 +57,16 @@ public class PlayerStats : MonoBehaviour
     public event Action<float> OnExpChanged;
 
     // 生命值属性（供 UI 读取）
-    public float CurrentHP => currentHP;
-    public float MaxHP => maxHP;
+    public float CurrentHP  => currentHP;
+    public float MaxHP      => maxHP;
     public float GetHPProgress() => maxHP > 0 ? currentHP / maxHP : 0f;
 
-    public int CurrentLevel => currentLevel;
+    // 蓝量属性（供 UI / 技能系统读取）
+    public float CurrentMP  => currentMP;
+    public float MaxMP      => maxMP;
+    public float GetMPProgress() => maxMP > 0 ? currentMP / maxMP : 0f;
+
+    public int   CurrentLevel => currentLevel;
     public float GetExpProgress() => currentExp / GetExpToNextLevel();
 
     // ────────────────── 私有引用 ──────────────────
@@ -58,6 +79,39 @@ public class PlayerStats : MonoBehaviour
         // 初始化生命值
         currentHP = maxHP;
         spriteRenderer = GetComponent<SpriteRenderer>();
+
+        // 初始化蓝量
+        currentMP = maxMP;
+        mpRegenTimer = 0f;
+
+        // 绑定 HP Slider
+        if (hpSlider != null)
+        {
+            hpSlider.maxValue = maxHP;
+            hpSlider.value    = currentHP;
+        }
+
+        // 绑定 MP Slider
+        if (mpSlider != null)
+        {
+            mpSlider.maxValue = maxMP;
+            mpSlider.value    = currentMP;
+        }
+    }
+
+    // ══════════════════ Update ══════════════════
+
+    void Update()
+    {
+        // ── 蓝条自然回复 ──
+        mpRegenTimer += Time.deltaTime;
+        if (mpRegenTimer >= MP_REGEN_INTERVAL)
+        {
+            mpRegenTimer -= MP_REGEN_INTERVAL;
+            float regenAmount = maxMP * MP_REGEN_RATIO;
+            currentMP = Mathf.Min(currentMP + regenAmount, maxMP);
+            UpdateMPSlider();
+        }
     }
 
     float GetExpToNextLevel()
@@ -78,6 +132,7 @@ public class PlayerStats : MonoBehaviour
         currentHP -= damage;
         currentHP = Mathf.Max(currentHP, 0f);
         Debug.Log($"玩家受到 {damage:F0} 伤害，剩余 HP: {currentHP:F0}");
+        UpdateHPSlider();
 
         // 颜色闪红反馈
         if (spriteRenderer != null)
@@ -108,6 +163,51 @@ public class PlayerStats : MonoBehaviour
         // TODO: 触发死亡动画、显示死亡 UI、重载场景等
         // 示例：UnityEngine.SceneManagement.SceneManager.LoadScene(
         //     UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex);
+    }
+
+    /// <summary>
+    /// 药瓶等掉落物调用此接口恢复血量。
+    /// </summary>
+    /// <param name="amount">恢复量（正数）</param>
+    public void RestoreHealth(float amount)
+    {
+        if (amount <= 0f) return;
+        currentHP = Mathf.Min(currentHP + amount, maxHP);
+        Debug.Log($"[HP回复] +{amount:F0}，当前 HP: {currentHP:F0}/{maxHP:F0}");
+        UpdateHPSlider();
+    }
+
+    // ────────────────── 蓝量接口 ──────────────────
+
+    /// <summary>
+    /// 水魔爆释放消耗：扣除总蓝量的 1/3。
+    /// 返回 true 表示蓝量足够并已扣除；false 表示蓝量不足，不触发技能。
+    /// </summary>
+    public bool UseManaForWaterBomb()
+    {
+        float cost = maxMP / 3f;
+        if (currentMP < cost)
+        {
+            Debug.Log($"[MP不足] 需要 {cost:F0}，当前 {currentMP:F0}");
+            return false;
+        }
+        currentMP -= cost;
+        currentMP  = Mathf.Max(currentMP, 0f);
+        Debug.Log($"[水魔爆] 消耗 {cost:F0} MP，剩余: {currentMP:F0}/{maxMP:F0}");
+        UpdateMPSlider();
+        return true;
+    }
+
+    // ────────────────── Slider 辅助 ──────────────────
+
+    private void UpdateHPSlider()
+    {
+        if (hpSlider != null) hpSlider.value = currentHP;
+    }
+
+    private void UpdateMPSlider()
+    {
+        if (mpSlider != null) mpSlider.value = currentMP;
     }
 
     public void AddExp(float amount)

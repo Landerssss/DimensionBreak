@@ -1,10 +1,22 @@
 fileFormatVersion: 2
-guid: 5cdd19315c694464eb301ecaa2a6c7fd
+guid: efe440a575ac52941931accdf4476cf7
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 9082429109045791810
-    second: Laser_0
+      213: -6110930478527191834
+    second: Gorund1_0
+  - first:
+      213: -1246115750489350627
+    second: Gorund1_1
+  - first:
+      213: 5760715561418963594
+    second: Gorund1_2
+  - first:
+      213: -7786671697143928862
+    second: Gorund1_3
+  - first:
+      213: 4494894316516285157
+    second: Gorund1_4
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -126,13 +138,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Laser_0
+      name: Gorund1_0
       rect:
         serializedVersion: 2
-        x: 0
+        x: 8
         y: 0
-        width: 137
-        height: 140
+        width: 712
+        height: 285
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +153,96 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 24c875667254b0e70800000000000000
-      internalID: 9082429109045791810
+      spriteID: 6e4674c5b1d913ba0800000000000000
+      internalID: -6110930478527191834
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Gorund1_1
+      rect:
+        serializedVersion: 2
+        x: 174
+        y: 241
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d1e101fb358e4bee0800000000000000
+      internalID: -1246115750489350627
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Gorund1_2
+      rect:
+        serializedVersion: 2
+        x: 145
+        y: 32
+        width: 6
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a8a3172184c22ff40800000000000000
+      internalID: 5760715561418963594
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Gorund1_3
+      rect:
+        serializedVersion: 2
+        x: 176
+        y: 30
+        width: 10
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2e7e525d85f20f390800000000000000
+      internalID: -7786671697143928862
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Gorund1_4
+      rect:
+        serializedVersion: 2
+        x: 160
+        y: 12
+        width: 9
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5ea10eed092116e30800000000000000
+      internalID: 4494894316516285157
       vertices: []
       indices: 
       edges: []

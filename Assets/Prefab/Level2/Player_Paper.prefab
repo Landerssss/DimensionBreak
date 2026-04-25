@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &495563314832388320
+--- !u!1 &4496616026794901042
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,38 +8,38 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 5922830045805472878}
-  - component: {fileID: 5989197393716020863}
-  - component: {fileID: 7216739636974771968}
+  - component: {fileID: 1120004365300470348}
+  - component: {fileID: 4898885072170803687}
+  - component: {fileID: 6708338070840260979}
   m_Layer: 0
-  m_Name: Enemy_Paper
+  m_Name: Player_Paper
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &5922830045805472878
+--- !u!4 &1120004365300470348
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 495563314832388320}
+  m_GameObject: {fileID: 4496616026794901042}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 7.53, y: 2.94, z: 0}
-  m_LocalScale: {x: 0.6206077, y: 0.6241362, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: -0.01, y: -0.02, z: 0}
+  m_LocalScale: {x: 0.32, y: 0.31594232, z: 1.4884952}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!212 &5989197393716020863
+--- !u!212 &4898885072170803687
 SpriteRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 495563314832388320}
+  m_GameObject: {fileID: 4496616026794901042}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -77,8 +77,8 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -7482177786666212508, guid: c44a10cfd7d8bc74e83a1c0d56cc6423, type: 3}
-  m_Color: {r: 0.8301887, g: 0.43075827, b: 0.43075827, a: 1}
+  m_Sprite: {fileID: -2311659948842064771, guid: 60eb899ff69e13e48bc51c45d620c6f1, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -88,16 +88,16 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &7216739636974771968
+--- !u!114 &6708338070840260979
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 495563314832388320}
+  m_GameObject: {fileID: 4496616026794901042}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6b2014dc4a0f4d14e93e7cd186850171, type: 3}
+  m_Script: {fileID: 11500000, guid: a9a1ac7c26bac8541a82be02a79bd9eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   gridPosition: {x: 0, y: 0}
@@ -106,7 +106,5 @@ MonoBehaviour:
   breathSpeed: 2
   wobbleAngle: 45
   moveDuration: 0.25
-  maxHP: 3
-  shrinkPerHit: 0.15
-  darkenPerHit: 0.2
-  forbiddenColumn: 5
+  exitColumn: 5
+  failSceneName: Level1_2D
