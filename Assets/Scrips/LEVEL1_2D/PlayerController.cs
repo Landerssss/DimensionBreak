@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 using System.Collections;
 
 /// <summary>
@@ -26,9 +28,13 @@ public class PlayerController : MonoBehaviour
     [Header("=== 冲刺 ===")]
     [SerializeField] private float dashSpeed = 25f;
     [SerializeField] private float dashDuration = 0.2f;
-    [SerializeField] private float dashCooldown = 1f;
+    [SerializeField] private float dashCooldown = 2.0f;
     [SerializeField] private float dashAttackWidth = 1f;
     [SerializeField] private LayerMask enemyLayer;
+
+    [Header("=== 冲刺 CD UI ===")]
+    [SerializeField] private Image     dashCdMask;
+    [SerializeField] private TextMeshProUGUI dashCdText;
 
     // ────────────────── 近战攻击 (左键) ──────────────────
     [Header("=== 近战攻击 ===")]
@@ -42,13 +48,22 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float grappleMaxDistance = 10f;
     [SerializeField] private float grappleArriveThreshold = 0.5f;
     [SerializeField] private LineRenderer grappleLineRenderer;
+    [SerializeField] private float hookCooldownTime = 2.0f;
+
+    [Header("=== 钩锁 CD UI ===")]
+    [SerializeField] private Image     hookCdMask;
+    [SerializeField] private TextMeshProUGUI hookCdText;
 
     // ────────────────── 下坠攻击 (空中单压S) ──────────────────
     [Header("=== 下坠攻击 ===")]
     [SerializeField] private float diveSpeed = 45f;
     [SerializeField] private float diveAOERadius = 2f;
     [SerializeField] private float diveDamageMultiplier = 1.5f;
-    [SerializeField] private float diveCooldown = 1.5f;
+    [SerializeField] private float diveCooldown = 2.0f;
+
+    [Header("=== 下坠 CD UI ===")]
+    [SerializeField] private Image     diveCdMask;
+    [SerializeField] private TextMeshProUGUI diveCdText;
 
     // ────────────────── 内部状态 ──────────────────
     private Rigidbody2D rb;
@@ -58,16 +73,17 @@ public class PlayerController : MonoBehaviour
 
     // 冲刺状态
     private bool isDashing;
-    private bool canDash = true;
+    private float lastDashTime  = -999f;   // 上次冲刺时间
     public bool IsDashing => isDashing;
 
     // 下坠状态
     public bool IsDiving { get; private set; }
-    private bool canDive = true;
+    private float lastDiveTime  = -999f;   // 上次下坠时间
     private float lastAttackTime = -999f;
 
     // 钩锁状态
     private bool isGrappling;
+    private float lastHookTime  = -999f;   // 上次钩锁时间
     private Vector2 grappleTarget;
 
     // 引用
@@ -120,6 +136,11 @@ public class PlayerController : MonoBehaviour
             PerformDiveAOE();
         }
 
+        // ── CD UI 每帧刷新 ──
+        UpdateCooldownUI(dashCdMask, dashCdText, lastDashTime, dashCooldown);
+        UpdateCooldownUI(hookCdMask, hookCdText, lastHookTime, hookCooldownTime);
+        UpdateCooldownUI(diveCdMask, diveCdText, lastDiveTime, diveCooldown);
+
         // 钩锁移动中处理
         if (isGrappling)
         {
@@ -136,6 +157,38 @@ public class PlayerController : MonoBehaviour
         HandleAttack();
         HandleGrappleInput();
         HandleDiveInput();
+    }
+
+    // ──────────────────── CD UI 通用驱动 ────────────────────
+    /// <summary>
+    /// 根据上次技能时间和 CD 总时长，刷新灰色遮罩和倒计时文字。
+    /// </summary>
+    void UpdateCooldownUI(Image mask, TextMeshProUGUI text, float lastUseTime, float cooldown)
+    {
+        float elapsed  = Time.time - lastUseTime;
+        float remaining = cooldown - elapsed;
+
+        if (remaining > 0f)
+        {
+            // 处于 CD 中
+            float fillVal = remaining / cooldown;   // 1 → 0
+            if (mask != null)
+            {
+                mask.enabled     = true;
+                mask.fillAmount  = fillVal;
+            }
+            if (text != null)
+            {
+                text.enabled = true;
+                text.text    = remaining.ToString("F1");
+            }
+        }
+        else
+        {
+            // CD 结束，隐藏
+            if (mask != null) { mask.enabled = false; mask.fillAmount = 0f; }
+            if (text != null) { text.enabled = false; text.text = ""; }
+        }
     }
 
     // ══════════════════ 移动与跳跃 ══════════════════
@@ -168,8 +221,8 @@ public class PlayerController : MonoBehaviour
 
     void HandleDiveInput()
     {
-        // 优化1：在空中单击 S 键即可触发下坠，提升响应速度
-        if (!isGrounded && Input.GetKeyDown(KeyCode.S) && canDive)
+        // 在空中单击 S 键即可触发下坠，CD 检查
+        if (!isGrounded && Input.GetKeyDown(KeyCode.S) && Time.time > lastDiveTime + diveCooldown)
         {
             ActivateDive();
         }
@@ -177,8 +230,8 @@ public class PlayerController : MonoBehaviour
 
     void ActivateDive()
     {
-        IsDiving = true;
-        canDive = false;
+        IsDiving      = true;
+        lastDiveTime  = Time.time;   // 记录释放时间
         // 赋予向下的极高初速度
         rb.linearVelocity = new Vector2(rb.linearVelocity.x * 0.3f, -diveSpeed);
     }
@@ -193,20 +246,15 @@ public class PlayerController : MonoBehaviour
             if (enemy != null) enemy.TakeDamage(dmg);
         }
         rb.linearVelocity = new Vector2(0, jumpForce * 0.5f); // 落地微量反弹，增加手感
-        StartCoroutine(DiveCooldownCoroutine());
-    }
-
-    IEnumerator DiveCooldownCoroutine()
-    {
-        yield return new WaitForSeconds(diveCooldown);
-        canDive = true;
+        // CD 已在 ActivateDive() 记录，无需协程
     }
 
     // ────────────────── 虚空钩锁逻辑 ──────────────────
 
     void HandleGrappleInput()
     {
-        if (Input.GetKeyDown(KeyCode.T) || Input.GetMouseButtonDown(1))
+        if ((Input.GetKeyDown(KeyCode.T) || Input.GetMouseButtonDown(1))
+            && Time.time > lastHookTime + hookCooldownTime)
         {
             LaunchGrapple();
         }
@@ -214,15 +262,17 @@ public class PlayerController : MonoBehaviour
 
     void LaunchGrapple()
     {
+        lastHookTime = Time.time;  // 记录钩锁释放时间
+
         Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         mouseWorld.z = 0;
         Vector2 origin = transform.position;
         Vector2 dir = ((Vector2)mouseWorld - origin).normalized;
         
-        // 优化3-B & 3-G：根据鼠标距离截断最大范围
+        // 根据鼠标距离截断最大范围
         float dist = Mathf.Min(Vector2.Distance(origin, mouseWorld), grappleMaxDistance);
         
-        // 优化3-A：虚空钩锁，不依赖Layer碰撞，直接设定目标位移点
+        // 虚空钩锁，不依赖Layer碰撞，直接设定目标位移点
         grappleTarget = origin + dir * dist;
         
         isGrappling = true;
@@ -288,13 +338,14 @@ public class PlayerController : MonoBehaviour
 
     void HandleDash()
     {
-        if (Input.GetKeyDown(KeyCode.LeftShift) && canDash) StartCoroutine(DashCoroutine());
+        if (Input.GetKeyDown(KeyCode.LeftShift) && Time.time > lastDashTime + dashCooldown)
+            StartCoroutine(DashCoroutine());
     }
 
     IEnumerator DashCoroutine()
     {
-        isDashing = true;
-        canDash = false;
+        lastDashTime = Time.time;   // 记录冲刺释放时间
+        isDashing    = true;
         float originalGrav = rb.gravityScale;
         rb.gravityScale = 0;
         float dir = isFacingRight ? 1f : -1f;
@@ -305,13 +356,12 @@ public class PlayerController : MonoBehaviour
         rb.gravityScale = originalGrav;
         rb.linearVelocity = Vector2.zero;
         isDashing = false;
-        yield return new WaitForSeconds(dashCooldown);
-        canDash = true;
+        // CD 已在协程开始时记录，等待结束由 UpdateCooldownUI 自动判断
     }
 
     public void InstantResetDash()
     {
-        canDash = true;
+        lastDashTime = -999f;   // 立即重置 CD
         StopCoroutine(nameof(DashCoroutine));
         isDashing = false;
         rb.gravityScale = defaultGravity;
