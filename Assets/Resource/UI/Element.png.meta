@@ -1,10 +1,19 @@
 fileFormatVersion: 2
-guid: 5cdd19315c694464eb301ecaa2a6c7fd
+guid: ceedc471f70cfbb439b98fff323470b8
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 9082429109045791810
-    second: Laser_0
+      213: -4472060579998350183
+    second: Element_0
+  - first:
+      213: 851628209088727409
+    second: Element_1
+  - first:
+      213: 1120935673509858270
+    second: Element_2
+  - first:
+      213: 8160215230008153784
+    second: Element_3
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -126,13 +135,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Laser_0
+      name: Element_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 137
-        height: 140
+        x: 44
+        y: 104
+        width: 95
+        height: 82
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +150,74 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 24c875667254b0e70800000000000000
-      internalID: 9082429109045791810
+      spriteID: 994cb23b89c00f1c0800000000000000
+      internalID: -4472060579998350183
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Element_1
+      rect:
+        serializedVersion: 2
+        x: 110
+        y: 79
+        width: 258
+        height: 243
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1798f63185791db00800000000000000
+      internalID: 851628209088727409
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Element_2
+      rect:
+        serializedVersion: 2
+        x: 368
+        y: 51
+        width: 129
+        height: 282
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: edb4e9b5e0d5e8f00800000000000000
+      internalID: 1120935673509858270
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Element_3
+      rect:
+        serializedVersion: 2
+        x: 510
+        y: 97
+        width: 131
+        height: 116
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8b65e5b5488ee3170800000000000000
+      internalID: 8160215230008153784
       vertices: []
       indices: 
       edges: []
