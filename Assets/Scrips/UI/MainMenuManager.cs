@@ -5,25 +5,21 @@ using System.Collections.Generic;
 using TMPro;
 
 /// <summary>
-/// 主菜单管理器 — "三区域遮罩轮转 (Three-Zone Mask Rotation)" 版本
+/// 主菜单管理器 — "基于径向遮罩（Radial Mask）的 UI 容器旋转轮转" 版本
 ///
 /// 屏幕被视觉上划分为三个区域：
-///   Left  (小三角) — 显示上一张图片的局部
-///   Center(主体)   — 显示当前状态的主背景
-///   Right (大三角) — 显示下一张图片的局部
-///
-/// 三张完整大图 [Day, Dusk, Night] 存储在 allBackgrounds 数组中，
-/// 通过索引轮转将不同 Sprite 赋值给三个 Image Slot。
+///   Left  (小三角) — 触发顺时针旋转
+///   Center(主体)   — 当前激活状态
+///   Right (大三角) — 触发逆时针旋转
 ///
 /// 状态对应功能：
 ///   Night (index=2) — 标题画面（游戏启动默认状态）
-///   Day   (index=0) — 设置 + 开始游戏
-///   Dusk  (index=1) — 退出游戏 + 确认弹窗
+///   Day   (index=0) — 设置
+///   Dusk  (index=1) — 退出游戏确认
 ///
-/// 点击右区域 → 逆时针轮转（索引 +1），图片引用序列整体左移一位。
-/// 点击左区域 → 顺时针轮转（索引 -1），图片引用序列整体右移一位。
-///
-/// 所有数值均通过 [SerializeField] 暴露到 Inspector，绝不硬编码。
+/// 核心逻辑：
+/// - 废弃单纯图片淡入淡出，使用径向容器（zoneContainers）配合旋转。
+/// - 对内层 UI（uiPanels）做反向旋转补偿，确保文字/按钮始终端正。
 /// </summary>
 public class MainMenuManager : MonoBehaviour
 {
@@ -42,19 +38,12 @@ public class MainMenuManager : MonoBehaviour
     //  序列化字段 — 全部暴露到 Inspector
     // ═══════════════════════════════════════════════
 
-    // ────────────────── 三区域 Image Slot ──────────────────
-    [Header("=== 三区域 Image Slot ===")]
-    [Tooltip("左侧小三角区域的 Image 组件")]
-    [SerializeField] private Image leftSlot;
-    [Tooltip("中央主体区域的 Image 组件")]
-    [SerializeField] private Image centerSlot;
-    [Tooltip("右侧大三角区域的 Image 组件")]
-    [SerializeField] private Image rightSlot;
-
-    // ────────────────── 背景图集 ──────────────────
-    [Header("=== 背景图集 ===")]
-    [Tooltip("按 [Day, Dusk, Night] 顺序存放三张背景大图")]
-    [SerializeField] private Sprite[] allBackgrounds = new Sprite[3];
+    // ────────────────── 径向轮转容器 ──────────────────
+    [Header("=== 径向轮转容器 ===")]
+    [Tooltip("对应三个旋转遮罩槽位 (Day, Dusk, Night)")]
+    [SerializeField] private RectTransform[] zoneContainers;
+    [Tooltip("对应 Day/Dusk/Night 下的实际交互 UI")]
+    [SerializeField] private CanvasGroup[] uiPanels;
 
     // ────────────────── 初始状态 ──────────────────
     [Header("=== 初始状态 ===")]
@@ -63,10 +52,10 @@ public class MainMenuManager : MonoBehaviour
 
     // ────────────────── 过渡效果 ──────────────────
     [Header("=== 轮转过渡 ===")]
-    [Tooltip("轮转 alpha 渐变的总时长（秒）")]
-    [SerializeField] private float fadeDuration = 0.5f;
-    [Tooltip("渐变缓动曲线")]
-    [SerializeField] private AnimationCurve fadeCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    [Tooltip("轮转过渡的总时长（秒）")]
+    [SerializeField] private float transitionDuration = 0.5f;
+    [Tooltip("旋转缓动曲线")]
+    [SerializeField] private AnimationCurve transitionCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
     // ────────────────── 区域导航按钮 ──────────────────
     [Header("=== 区域按钮 ===")]
@@ -86,7 +75,6 @@ public class MainMenuManager : MonoBehaviour
 
     // ────────────────── 退出确认弹窗 (Dusk) ──────────────────
     [Header("=== 退出确认弹窗 (Dusk 状态) ===")]
-    [SerializeField] private GameObject quitConfirmPanel;
     [SerializeField] private Button quitYesButton;
     [SerializeField] private Button quitNoButton;
 
@@ -106,17 +94,10 @@ public class MainMenuManager : MonoBehaviour
 
     // ────────────────── 设置控件 (Day) ──────────────────
     [Header("=== 设置面板 (Day 状态) ===")]
-    [Tooltip("设置控件的父容器，仅在 Day 状态显示")]
-    [SerializeField] private GameObject settingsContainer;
     [SerializeField] private Toggle fullscreenToggle;
     [SerializeField] private Toggle vsyncToggle;
     [SerializeField] private Slider volumeSlider;
     [SerializeField] private TMP_Dropdown resolutionDropdown;
-
-    // ────────────────── Night 状态 UI ──────────────────
-    [Header("=== 标题 UI (Night 状态) ===")]
-    [Tooltip("标题界面的 UI 容器，仅在 Night 状态显示")]
-    [SerializeField] private GameObject titleContainer;
 
     // ────────────────── 音频 ──────────────────
     [Header("=== 音频 ===")]
@@ -160,9 +141,9 @@ public class MainMenuManager : MonoBehaviour
         // 设置初始索引
         centerIndex = (int)initialState;
 
-        // 立即更新三个 Slot 的 Sprite（无动画）
-        ApplySpritesToSlots();
-        UpdateUIForCurrentState();
+        // 立即同步容器角度与交互状态
+        SyncUIContainers();
+        UpdateZoneLabels();
 
         // ── 绑定区域按钮 ──
         if (rightZoneButton != null)
@@ -185,10 +166,6 @@ public class MainMenuManager : MonoBehaviour
         InitVsyncToggle();
         InitVolumeSlider();
         InitResolutionDropdown();
-
-        // 退出确认弹窗默认隐藏
-        if (quitConfirmPanel != null)
-            quitConfirmPanel.SetActive(false);
     }
 
     // ═══════════════════════════════════════════════
@@ -197,171 +174,144 @@ public class MainMenuManager : MonoBehaviour
 
     /// <summary>
     /// 右区域大三角点击 → 逆时针轮转（索引 +1）
-    /// 图片引用序列整体向左位移一位
     /// </summary>
     void OnRightZoneClicked()
     {
         if (isTransitioning) return;
         PlayClickSFX();
-        RotateWithFade(+1);
+        int targetIndex = (centerIndex + 1) % 3;
+        RotateTo(targetIndex, +1);
     }
 
     /// <summary>
     /// 左区域小三角点击 → 顺时针轮转（索引 -1）
-    /// 图片引用序列整体向右位移一位
     /// </summary>
     void OnLeftZoneClicked()
     {
         if (isTransitioning) return;
         PlayClickSFX();
-        RotateWithFade(-1);
+        int targetIndex = (centerIndex - 1 + 3) % 3;
+        RotateTo(targetIndex, -1);
     }
 
     // ═══════════════════════════════════════════════
     //  轮转核心
     // ═══════════════════════════════════════════════
 
-    /// <summary>
-    /// 带 alpha 渐变的轮转动画。
-    /// direction: +1 = 逆时针（右侧触发），-1 = 顺时针（左侧触发）
-    /// </summary>
-    private void RotateWithFade(int direction)
+    private void RotateTo(int targetIndex, int direction)
     {
         if (activeTransition != null)
             StopCoroutine(activeTransition);
 
-        activeTransition = StartCoroutine(RotateFadeCoroutine(direction));
+        activeTransition = StartCoroutine(TransitionRoutine(targetIndex, direction));
     }
 
     /// <summary>
-    /// 轮转渐变协程：
-    /// 1) 三个 Slot 的 alpha 从 1 渐变到 0（淡出）
-    /// 2) 更新 centerIndex 和 Sprite 赋值
-    /// 3) 三个 Slot 的 alpha 从 0 渐变到 1（淡入）
+    /// 径向旋转轮转协程：
+    /// 在 transitionDuration 时间内，插值改变 zoneContainers 的 localRotation，
+    /// 并对 uiPanels 应用反向旋转补偿。
     /// </summary>
-    private IEnumerator RotateFadeCoroutine(int direction)
+    private IEnumerator TransitionRoutine(int targetIndex, int direction)
     {
         isTransitioning = true;
         PlayTransitionSFX();
 
-        float halfDuration = fadeDuration * 0.5f;
+        // 旋转开始：禁用所有交互，防止误操作
+        if (uiPanels != null)
+        {
+            foreach (var panel in uiPanels)
+            {
+                if (panel != null) panel.blocksRaycasts = false;
+            }
+        }
 
-        // ── Phase 1: 淡出 ──
+        // 准备起止角度
+        int containerCount = zoneContainers != null ? zoneContainers.Length : 0;
+        float[] startAngles = new float[containerCount];
+        float[] targetAngles = new float[containerCount];
+        float rotationAmount = direction * 120f;
+
+        for (int i = 0; i < containerCount; i++)
+        {
+            if (zoneContainers[i] != null)
+            {
+                startAngles[i] = zoneContainers[i].localEulerAngles.z;
+                // 将 0~360 的角度调整为更连续的表示，防止 Lerp 时越界翻转
+                if (startAngles[i] > 180f) startAngles[i] -= 360f;
+                targetAngles[i] = startAngles[i] + rotationAmount;
+            }
+        }
+
         float elapsed = 0f;
-        while (elapsed < halfDuration)
+        while (elapsed < transitionDuration)
         {
             elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / halfDuration);
-            float curveT = fadeCurve.Evaluate(t);
-            float alpha = Mathf.Lerp(1f, 0f, curveT);
+            float t = Mathf.Clamp01(elapsed / transitionDuration);
+            float curveT = transitionCurve.Evaluate(t);
 
-            SetSlotAlpha(leftSlot, alpha);
-            SetSlotAlpha(centerSlot, alpha);
-            SetSlotAlpha(rightSlot, alpha);
+            for (int i = 0; i < containerCount; i++)
+            {
+                if (zoneContainers[i] != null)
+                {
+                    float currentZ = Mathf.Lerp(startAngles[i], targetAngles[i], curveT);
+                    zoneContainers[i].localRotation = Quaternion.Euler(0, 0, currentZ);
+                    
+                    // 补偿 UI 旋转：保持文字和按钮不随遮罩倾斜
+                    if (uiPanels != null && i < uiPanels.Length && uiPanels[i] != null)
+                    {
+                        uiPanels[i].transform.localRotation = Quaternion.Euler(0, 0, -currentZ);
+                    }
+                }
+            }
 
             yield return null;
         }
 
-        // 确保完全透明
-        SetSlotAlpha(leftSlot, 0f);
-        SetSlotAlpha(centerSlot, 0f);
-        SetSlotAlpha(rightSlot, 0f);
-
-        // ── 更新索引和 Sprite ──
-        int count = allBackgrounds.Length;
-        centerIndex = (centerIndex + direction + count) % count;
-        ApplySpritesToSlots();
-        UpdateUIForCurrentState();
-
-        // ── Phase 2: 淡入 ──
-        elapsed = 0f;
-        while (elapsed < halfDuration)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / halfDuration);
-            float curveT = fadeCurve.Evaluate(t);
-            float alpha = Mathf.Lerp(0f, 1f, curveT);
-
-            SetSlotAlpha(leftSlot, alpha);
-            SetSlotAlpha(centerSlot, alpha);
-            SetSlotAlpha(rightSlot, alpha);
-
-            yield return null;
-        }
-
-        // 确保完全不透明
-        SetSlotAlpha(leftSlot, 1f);
-        SetSlotAlpha(centerSlot, 1f);
-        SetSlotAlpha(rightSlot, 1f);
+        // 最终修正对齐
+        centerIndex = targetIndex;
+        SyncUIContainers();
+        UpdateZoneLabels();
 
         isTransitioning = false;
         activeTransition = null;
     }
 
     // ═══════════════════════════════════════════════
-    //  Sprite 赋值
+    //  UI 状态同步
     // ═══════════════════════════════════════════════
 
     /// <summary>
-    /// 根据当前 centerIndex，将 Sprite 分配给三个 Slot：
-    ///   Left  = allBackgrounds[(centerIndex - 1 + N) % N]  (上一张)
-    ///   Center = allBackgrounds[centerIndex]                (当前)
-    ///   Right  = allBackgrounds[(centerIndex + 1) % N]      (下一张)
+    /// 直接同步所有的容器角度，并根据当前 centerIndex 设置 UI 交互性
     /// </summary>
-    private void ApplySpritesToSlots()
+    private void SyncUIContainers()
     {
-        if (allBackgrounds == null || allBackgrounds.Length < 3)
+        if (zoneContainers == null || uiPanels == null) return;
+
+        for (int i = 0; i < zoneContainers.Length; i++)
         {
-            Debug.LogWarning("[MainMenuManager] allBackgrounds 数组需要至少 3 张 Sprite！");
-            return;
+            if (zoneContainers[i] == null) continue;
+
+            // 根据中心索引计算目标角度，确保 centerIndex 对应的容器在 0 度
+            float angle = (centerIndex - i) * 120f;
+            zoneContainers[i].localRotation = Quaternion.Euler(0, 0, angle);
+
+            if (i < uiPanels.Length && uiPanels[i] != null)
+            {
+                // 反向补偿
+                uiPanels[i].transform.localRotation = Quaternion.Euler(0, 0, -angle);
+                
+                // 仅开启当前中心面板的交互权限
+                uiPanels[i].blocksRaycasts = (i == centerIndex);
+            }
         }
-
-        int count = allBackgrounds.Length;
-        int leftIndex  = (centerIndex - 1 + count) % count;
-        int rightIndex = (centerIndex + 1) % count;
-
-        if (leftSlot != null)
-            leftSlot.sprite = allBackgrounds[leftIndex];
-        if (centerSlot != null)
-            centerSlot.sprite = allBackgrounds[centerIndex];
-        if (rightSlot != null)
-            rightSlot.sprite = allBackgrounds[rightIndex];
-    }
-
-    // ═══════════════════════════════════════════════
-    //  UI 状态联动
-    // ═══════════════════════════════════════════════
-
-    /// <summary>根据当前 centerIndex 切换各功能 UI 的显示/隐藏并更新标签</summary>
-    private void UpdateUIForCurrentState()
-    {
-        MenuState state = (MenuState)centerIndex;
-
-        // ── 功能容器显隐 ──
-        if (titleContainer != null)
-            titleContainer.SetActive(state == MenuState.Night);
-
-        if (settingsContainer != null)
-            settingsContainer.SetActive(state == MenuState.Day);
-
-        if (startGameButton != null)
-            startGameButton.gameObject.SetActive(state == MenuState.Night);
-
-        // 退出弹窗仅在 Dusk 状态时自动显示
-        if (quitConfirmPanel != null)
-            quitConfirmPanel.SetActive(state == MenuState.Dusk);
-
-        // ── 更新区域标签 ──
-        UpdateZoneLabels();
     }
 
     /// <summary>
-    /// 根据三个 Slot 对应的背景，更新标签文字。
-    /// 标签内容 = 该 Slot 对应状态的名称。
+    /// 根据当前中心状态更新标签文字。
     /// </summary>
     private void UpdateZoneLabels()
     {
-        int count = allBackgrounds.Length;
+        int count = 3;
         int leftIndex  = (centerIndex - 1 + count) % count;
         int rightIndex = (centerIndex + 1) % count;
 
@@ -373,15 +323,14 @@ public class MainMenuManager : MonoBehaviour
             centerLabel.text = GetLabelForIndex(centerIndex);
     }
 
-    /// <summary>根据背景索引返回对应的标签文字</summary>
     private string GetLabelForIndex(int index)
     {
         MenuState state = (MenuState)index;
         return state switch
         {
-            MenuState.Day   => labelDay,    // "Setting"
-            MenuState.Dusk  => labelDusk,   // "Exit"
-            MenuState.Night => labelNight,  // "Title"
+            MenuState.Day   => labelDay,
+            MenuState.Dusk  => labelDusk,
+            MenuState.Night => labelNight,
             _ => ""
         };
     }
@@ -452,15 +401,14 @@ public class MainMenuManager : MonoBehaviour
     {
         PlayClickSFX();
         // 取消退出 → 轮转回 Night（标题画面）
-        // 计算需要旋转的方向：从 Dusk(1) 到 Night(2) 需要 +1
-        int stepsToNight = ((int)MenuState.Night - centerIndex + allBackgrounds.Length) % allBackgrounds.Length;
+        int stepsToNight = ((int)MenuState.Night - centerIndex + 3) % 3;
         if (stepsToNight == 0) return;
 
         // 选择最短路径方向
-        if (stepsToNight <= allBackgrounds.Length / 2)
-            RotateWithFade(+stepsToNight);
+        if (stepsToNight <= 3 / 2)
+            RotateTo((int)MenuState.Night, stepsToNight);
         else
-            RotateWithFade(-(allBackgrounds.Length - stepsToNight));
+            RotateTo((int)MenuState.Night, -(3 - stepsToNight));
     }
 
     // ═══════════════════════════════════════════════
@@ -549,15 +497,6 @@ public class MainMenuManager : MonoBehaviour
     //  工具方法
     // ═══════════════════════════════════════════════
 
-    /// <summary>设置 Image 组件的 alpha 值</summary>
-    private void SetSlotAlpha(Image slot, float alpha)
-    {
-        if (slot == null) return;
-        Color c = slot.color;
-        c.a = alpha;
-        slot.color = c;
-    }
-
     /// <summary>播放按钮点击音效</summary>
     private void PlayClickSFX()
     {
@@ -580,24 +519,23 @@ public class MainMenuManager : MonoBehaviour
     public void SetStateImmediate(MenuState state)
     {
         centerIndex = (int)state;
-        ApplySpritesToSlots();
-        SetSlotAlpha(leftSlot, 1f);
-        SetSlotAlpha(centerSlot, 1f);
-        SetSlotAlpha(rightSlot, 1f);
-        UpdateUIForCurrentState();
+        SyncUIContainers();
+        UpdateZoneLabels();
     }
 
     /// <summary>触发逆时针轮转（等同于点击右区域）</summary>
     public void RotateCounterClockwise()
     {
         if (isTransitioning) return;
-        RotateWithFade(+1);
+        int targetIndex = (centerIndex + 1) % 3;
+        RotateTo(targetIndex, +1);
     }
 
     /// <summary>触发顺时针轮转（等同于点击左区域）</summary>
     public void RotateClockwise()
     {
         if (isTransitioning) return;
-        RotateWithFade(-1);
+        int targetIndex = (centerIndex - 1 + 3) % 3;
+        RotateTo(targetIndex, -1);
     }
 }
