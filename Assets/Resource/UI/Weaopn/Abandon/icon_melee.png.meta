@@ -160,7 +160,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      icon_melee_0: 937117485165709826
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

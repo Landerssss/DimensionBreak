@@ -160,7 +160,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      BloodOfficial-removebg-preview_0: -2233301391076529430
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
