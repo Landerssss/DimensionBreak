@@ -260,7 +260,12 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Gorund1_0: -6110930478527191834
+      Gorund1_1: -1246115750489350627
+      Gorund1_2: 5760715561418963594
+      Gorund1_3: -7786671697143928862
+      Gorund1_4: 4494894316516285157
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
