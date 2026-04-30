@@ -30,6 +30,16 @@ namespace TealFalconEnemySeries{
         private Vector3 deathPlace;
         private MaterialPropertyBlock mpb;
 
+        [Header("=== AI Settings ===")]
+        public bool isAIEnabled = true;
+        public Transform playerTransform;
+        public Vector2 patrolCenter;
+        public float moveRange = 20f; // Boss活动范围
+        public float detectionRange = 8f; // 视野追踪范围
+        public float attackRange = 2.5f; // 攻击距离
+        public float attackCooldown = 2f;
+        private float lastAttackTime;
+
         //Config
         public bool block = false;
 
@@ -85,6 +95,16 @@ namespace TealFalconEnemySeries{
         public float minStepSpeed = 0.1f;
 
 
+
+        void Start()
+        {
+            patrolCenter = transform.position; // 默认初始位置为活动中心点
+            if (playerTransform == null)
+            {
+                GameObject player = GameObject.FindGameObjectWithTag("Player");
+                if (player != null) playerTransform = player.transform;
+            }
+        }
 
         void Awake()
         {
@@ -162,12 +182,24 @@ namespace TealFalconEnemySeries{
 
                 if(DissolveStatus == 0 && destroy)
                     Destroy(gameObject);
+                
+                return; // 死亡后停止所有逻辑
             }
 
-            if(CurrentFightingState != FightingState.Idle)
-                return;
+            if (isAIEnabled)
+            {
+                UpdateAI();
+            }
 
-                float targetSpeed = 0f;
+            // 非Idle和移动状态时，速度平滑减到0
+            if(CurrentFightingState != FightingState.Idle && CurrentFightingState != FightingState.Move && CurrentFightingState != FightingState.OnGuard)
+            {
+                currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, acceleration * Time.deltaTime);
+                _rigidBody.linearVelocity = new Vector2(currentSpeed, _rigidBody.linearVelocity.y);
+                return;
+            }
+
+            float targetSpeed = 0f;
 
             //Determine Target Speed
             switch(CurrentMovementState) {
@@ -181,7 +213,6 @@ namespace TealFalconEnemySeries{
                     targetSpeed = MaxRunSpeed;
                     break;
             }
-
         
             // Adjust the current speed based on acceleration
             currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed * transform.localScale.x, acceleration * Time.deltaTime);
@@ -189,25 +220,131 @@ namespace TealFalconEnemySeries{
             _animator.SetFloat("Speed",Mathf.Abs(currentSpeed)/animationSpeed);
             
             // Apply the calculated speed to the Rigidbody2D
-            _rigidBody.linearVelocity = new Vector2(currentSpeed  , 0);
+            _rigidBody.linearVelocity = new Vector2(currentSpeed, _rigidBody.linearVelocity.y);
 
             //Footstep Sound
-
             float stepSpeed = Mathf.Lerp(baseStepSpeed, minStepSpeed, Mathf.Abs(currentSpeed) / MaxRunSpeed);
             
             stepTimer += Time.deltaTime;
 
-
             if(stepTimer >= stepSpeed && Mathf.Abs(currentSpeed) > 0.1f){
-                
-    
                 PlaySound(FootStepSound);
-                
                 stepTimer = 0f;
             }
+        }
 
+        private void UpdateAI()
+        {
+            // 只有在Idle或OnGuard状态下才允许AI进行决策
+            if (CurrentFightingState != FightingState.Idle && CurrentFightingState != FightingState.OnGuard)
+                return;
 
+            if (playerTransform == null)
+            {
+                GameObject player = GameObject.FindGameObjectWithTag("Player");
+                if (player != null) playerTransform = player.transform;
+                if (playerTransform == null) return;
+            }
 
+            float distToPlayer = Vector2.Distance(transform.position, playerTransform.position);
+            float distToCenter = Vector2.Distance(transform.position, patrolCenter);
+            float playerDistToCenter = Vector2.Distance(playerTransform.position, patrolCenter);
+
+            // 核心逻辑：玩家必须在视野范围内，并且玩家和BOSS都必须在活动范围内
+            bool canSeePlayer = (distToPlayer <= detectionRange) && (playerDistToCenter <= moveRange) && (distToCenter <= moveRange);
+
+            if (canSeePlayer)
+            {
+                if (distToPlayer <= attackRange)
+                {
+                    // 在攻击范围内
+                    ActivateIdle(); // 停止移动
+                    
+                    if (Time.time - lastAttackTime > attackCooldown)
+                    {
+                        FaceTarget(playerTransform.position);
+                        StartCoroutine(AIAttackSequence());
+                        lastAttackTime = Time.time;
+                    }
+                    else
+                    {
+                        // 攻击冷却中，保持面向玩家并防御
+                        FaceTarget(playerTransform.position);
+                        if (CurrentFightingState != FightingState.OnGuard)
+                        {
+                            ActivateGuard();
+                        }
+                    }
+                }
+                else
+                {
+                    // 追击玩家
+                    if (CurrentFightingState == FightingState.OnGuard)
+                    {
+                        ActivateGuard(); // 取消防御以便移动
+                    }
+                    FaceTarget(playerTransform.position);
+                    ActivateRun();
+                }
+            }
+            else
+            {
+                if (CurrentFightingState == FightingState.OnGuard)
+                {
+                    ActivateGuard(); // 取消防御
+                }
+
+                // 不追击时，如果距离中心太远则走回去
+                if (distToCenter > 1f)
+                {
+                    FaceTarget((Vector3)patrolCenter);
+                    ActivateWalk();
+                }
+                else
+                {
+                    ActivateIdle();
+                }
+            }
+        }
+
+        private void FaceTarget(Vector3 targetPos)
+        {
+            float direction = targetPos.x - transform.position.x;
+            if (direction > 0.1f && transform.localScale.x < 0)
+            {
+                Flip();
+            }
+            else if (direction < -0.1f && transform.localScale.x > 0)
+            {
+                Flip();
+            }
+        }
+
+        IEnumerator AIAttackSequence()
+        {
+            // 确保完全停止移动
+            currentSpeed = 0f;
+            _rigidBody.linearVelocity = new Vector2(0, _rigidBody.linearVelocity.y);
+
+            // 随机选择攻击类型，30%概率使用激光
+            bool useBeam = Random.Range(0f, 1f) > 0.7f;
+            
+            if (useBeam)
+            {
+                ActivateBeamAttack();
+            }
+            else
+            {
+                if (CurrentFightingState != FightingState.OnGuard)
+                {
+                    ActivateGuard();
+                }
+                
+                // 等待动画状态机进入OnGuard
+                yield return new WaitForSeconds(0.1f);
+                
+                ActivateAttack();
+            }
         }
 
         //Change MovementState to Run
@@ -282,8 +419,7 @@ namespace TealFalconEnemySeries{
             CurrentFightingState = FightingState.Attacking;
             _rigidBody.AddForce(transform.localScale.x*Vector2.right * BackStepPower, ForceMode2D.Impulse);
             
-            if(currentSpeed != 0)
-                return;
+            currentSpeed = 0f; // 强制归零，防止无法触发协程
 
             StartCoroutine(AttackRoutine());
 
@@ -296,16 +432,13 @@ namespace TealFalconEnemySeries{
                 ActivateGuard();
             }
 
-
             CurrentMovementState = MovementState.Idle;
             CurrentFightingState = FightingState.Attacking;
                 
-  
             _animator.SetBool("Busy",true);
                         
-            if(currentSpeed <= 0f){
-                _animator.SetTrigger("BeamAttack");
-            }
+            currentSpeed = 0f; // 强制归零，防止无法触发动画
+            _animator.SetTrigger("BeamAttack");
 
             StartCoroutine(BeamShootRoutine());
 
