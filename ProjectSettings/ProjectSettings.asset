@@ -3,7 +3,7 @@
 --- !u!129 &1
 PlayerSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 26
+  serializedVersion: 28
   productGUID: c2970211015cc4e46a964c5ad34e6cb3
   AndroidProfiler: 0
   AndroidFilterTouchesWhenObscured: 0
@@ -49,6 +49,7 @@ PlayerSettings:
   m_StereoRenderingPath: 0
   m_ActiveColorSpace: 1
   unsupportedMSAAFallback: 0
+  m_SpriteBatchMaxVertexCount: 65535
   m_SpriteBatchVertexThreshold: 300
   m_MTRendering: 1
   mipStripping: 0
@@ -70,7 +71,7 @@ PlayerSettings:
   androidRenderOutsideSafeArea: 1
   androidUseSwappy: 1
   androidBlitType: 0
-  androidResizableWindow: 0
+  androidResizeableActivity: 0
   androidDefaultWindowWidth: 1920
   androidDefaultWindowHeight: 1080
   androidMinimumWindowWidth: 400
@@ -78,14 +79,13 @@ PlayerSettings:
   androidFullscreenMode: 1
   androidAutoRotationBehavior: 1
   androidPredictiveBackSupport: 0
+  androidApplicationEntry: 1
   defaultIsNativeResolution: 1
   macRetinaSupport: 1
   runInBackground: 0
-  captureSingleScreen: 0
   muteOtherAudioSources: 0
   Prepare IOS For Recording: 0
   Force IOS Speakers When Recording: 0
-  audioSpatialExperience: 0
   deferSystemGesturesMode: 0
   hideHomeButton: 0
   submitAnalytics: 1
@@ -98,6 +98,7 @@ PlayerSettings:
   useMacAppStoreValidation: 0
   macAppStoreCategory: public.app-category.games
   gpuSkinning: 0
+  meshDeformation: 0
   xboxPIXTextureCapture: 0
   xboxEnableAvatar: 0
   xboxEnableKinect: 0
@@ -129,10 +130,8 @@ PlayerSettings:
   switchAllowGpuScratchShrinking: 0
   switchNVNMaxPublicTextureIDCount: 0
   switchNVNMaxPublicSamplerIDCount: 0
-  switchNVNGraphicsFirmwareMemory: 32
   switchMaxWorkerMultiple: 8
-  stadiaPresentMode: 0
-  stadiaTargetFramerate: 0
+  switchNVNGraphicsFirmwareMemory: 32
   vulkanNumSwapchainBuffers: 3
   vulkanEnableSetSRGBWrite: 0
   vulkanEnablePreTransform: 0
@@ -162,6 +161,7 @@ PlayerSettings:
   resetResolutionOnWindowResize: 0
   androidSupportedAspectRatio: 1
   androidMaxAspectRatio: 2.4
+  androidMinAspectRatio: 1
   applicationIdentifier:
     Standalone: com.DefaultCompany.2D-URP
   buildNumber:
@@ -181,7 +181,7 @@ PlayerSettings:
   ForceInternetPermission: 0
   ForceSDCardPermission: 0
   CreateWallpaper: 0
-  APKExpansionFiles: 0
+  androidSplitApplicationBinary: 0
   keepLoadedShadersAlive: 0
   StripUnusedMeshComponents: 0
   strictShaderVariantMatching: 0
@@ -219,7 +219,6 @@ PlayerSettings:
     rgba: 0
   iOSLaunchScreenFillPct: 100
   iOSLaunchScreenSize: 100
-  iOSLaunchScreenCustomXibPath: 
   iOSLaunchScreeniPadType: 0
   iOSLaunchScreeniPadImage: {fileID: 0}
   iOSLaunchScreeniPadBackgroundColor:
@@ -227,7 +226,6 @@ PlayerSettings:
     rgba: 0
   iOSLaunchScreeniPadFillPct: 100
   iOSLaunchScreeniPadSize: 100
-  iOSLaunchScreeniPadCustomXibPath: 
   iOSLaunchScreenCustomStoryboardPath: 
   iOSLaunchScreeniPadCustomStoryboardPath: 
   iOSDeviceRequirements: []
@@ -264,12 +262,12 @@ PlayerSettings:
   useCustomGradleSettingsTemplate: 0
   useCustomProguardFile: 0
   AndroidTargetArchitectures: 2
-  AndroidTargetDevices: 0
   AndroidSplashScreenScale: 0
   androidSplashScreen: {fileID: 0}
   AndroidKeystoreName: 
   AndroidKeyaliasName: 
   AndroidEnableArmv9SecurityFeatures: 0
+  AndroidEnableArm64MTE: 0
   AndroidBuildApkPerCpuArchitecture: 0
   AndroidTVCompatibility: 0
   AndroidIsGame: 1
@@ -282,11 +280,12 @@ PlayerSettings:
     height: 180
     banner: {fileID: 0}
   androidGamepadSupportLevel: 0
-  chromeosInputEmulation: 1
   AndroidMinifyRelease: 0
   AndroidMinifyDebug: 0
   AndroidValidateAppBundleSize: 1
   AndroidAppBundleSizeToValidate: 150
+  AndroidReportGooglePlayAppDependencies: 1
+  androidSymbolsSizeThreshold: 800
   m_BuildTargetIcons: []
   m_BuildTargetPlatformIcons:
   - m_BuildTarget: Android
@@ -495,7 +494,6 @@ PlayerSettings:
     iPhone: 1
     tvOS: 1
   m_BuildTargetGroupLightmapEncodingQuality: []
-  m_BuildTargetGroupHDRCubemapEncodingQuality: []
   m_BuildTargetGroupLightmapSettings: []
   m_BuildTargetGroupLoadStoreDebugModeSettings: []
   m_BuildTargetNormalMapEncoding: []
@@ -503,6 +501,7 @@ PlayerSettings:
   playModeTestRunnerEnabled: 0
   runPlayModeTestAsEditModeTest: 0
   actionOnDotNetUnhandledException: 1
+  editorGfxJobOverride: 1
   enableInternalProfiler: 0
   logObjCUncaughtExceptions: 1
   enableCrashReportAPI: 0
@@ -655,6 +654,7 @@ PlayerSettings:
   switchEnableRamDiskSupport: 0
   switchMicroSleepForYieldTime: 25
   switchRamDiskSpaceSize: 12
+  switchUpgradedPlayerSettingsToNMETA: 0
   ps4NPAgeRating: 12
   ps4NPTitleSecret: 
   ps4NPTrophyPackPath: 
@@ -757,14 +757,37 @@ PlayerSettings:
   webGLMemoryLinearGrowthStep: 16
   webGLMemoryGeometricGrowthStep: 0.2
   webGLMemoryGeometricGrowthCap: 96
+  webGLEnableWebGPU: 0
   webGLPowerPreference: 2
-  scriptingDefineSymbols: {}
+  webGLWebAssemblyTable: 0
+  webGLWebAssemblyBigInt: 0
+  webGLCloseOnQuit: 0
+  webWasm2023: 0
+  scriptingDefineSymbols:
+    Android: 
+    EmbeddedLinux: 
+    GameCoreScarlett: 
+    GameCoreXboxOne: 
+    LinuxHeadlessSimulation: 
+    Nintendo Switch: 
+    PS4: 
+    PS5: 
+    QNX: 
+    ReservedCFE: 
+    Standalone: 
+    VisionOS: 
+    WebGL: 
+    Windows Store Apps: 
+    XboxOne: 
+    iPhone: 
+    tvOS: 
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:
     Android: 1
   il2cppCompilerConfiguration: {}
   il2cppCodeGeneration: {}
+  il2cppStacktraceInformation: {}
   managedStrippingLevel:
     Android: 1
     EmbeddedLinux: 1
@@ -789,6 +812,7 @@ PlayerSettings:
   gcIncremental: 1
   gcWBarrierValidation: 0
   apiCompatibilityLevelPerPlatform: {}
+  editorAssembliesCompatibilityLevel: 1
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
   metroPackageName: DimensionBreak
@@ -862,9 +886,11 @@ PlayerSettings:
   hmiPlayerDataPath: 
   hmiForceSRGBBlit: 1
   embeddedLinuxEnableGamepadInput: 0
-  hmiLogStartupTiming: 0
   hmiCpuConfiguration: 
+  hmiLogStartupTiming: 0
+  qnxGraphicConfPath: 
   apiCompatibilityLevel: 6
+  captureStartupLogs: {}
   activeInputHandler: 2
   windowsGamepadBackendHint: 0
   cloudProjectId: 796d6415-6699-441e-a79c-59765cb3c8f5
@@ -878,3 +904,5 @@ PlayerSettings:
   platformRequiresReadableAssets: 0
   virtualTexturingSupportEnabled: 0
   insecureHttpOption: 0
+  androidVulkanDenyFilterList: []
+  androidVulkanAllowFilterList: []
