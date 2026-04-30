@@ -461,12 +461,15 @@ public class PlayerController : MonoBehaviour
                 r.material.shader = Shader.Find("Sprites/Default"); // 使用2D无光照Shader
             }
             
-            // 移除默认3D碰撞体，添加2D触发器和刚体
-            Destroy(swordObj.GetComponent<Collider>());
+            // 移除默认3D碰撞体（必须立刻销毁，否则可能与后续的2D碰撞体冲突导致 AddComponent 返回空）
+            Collider oldCollider = swordObj.GetComponent<Collider>();
+            if (oldCollider != null) DestroyImmediate(oldCollider);
+
             BoxCollider2D bc = swordObj.AddComponent<BoxCollider2D>();
-            bc.isTrigger = true;
+            if (bc != null) bc.isTrigger = true;
+
             Rigidbody2D rbProj = swordObj.AddComponent<Rigidbody2D>();
-            rbProj.isKinematic = true;
+            if (rbProj != null) rbProj.isKinematic = true;
         }
 
         // 计算旋转角度，使其朝向发射方向
