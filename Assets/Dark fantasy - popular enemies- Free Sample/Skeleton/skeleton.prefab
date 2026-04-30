@@ -74,7 +74,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -7552582706839291426, guid: a3779e50bc9323e41946f7b5517235c6, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -7552582706839291426, guid: a3779e50bc9323e41946f7b5517235c6, type: 3}
       propertyPath: m_LocalRotation.x
@@ -82,7 +82,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -7552582706839291426, guid: a3779e50bc9323e41946f7b5517235c6, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -7552582706839291426, guid: a3779e50bc9323e41946f7b5517235c6, type: 3}
       propertyPath: m_LocalRotation.z
@@ -94,7 +94,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -7552582706839291426, guid: a3779e50bc9323e41946f7b5517235c6, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
+      value: 180
       objectReference: {fileID: 0}
     - target: {fileID: -7552582706839291426, guid: a3779e50bc9323e41946f7b5517235c6, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
@@ -558,7 +558,7 @@ MonoBehaviour:
     m_Bits: 1
   loseChasingDistance: 8
   attackPauseDuration: 1
-  attackRange: 1.2
+  attackRange: 3
   attackDamage: 10
   expReward: 800
   hitFlashDuration: 0.1

@@ -146,6 +146,7 @@ public class EnemyAI : MonoBehaviour
 
     void Patrol()
     {
+        if (animator != null) animator.SetBool("IsWalking", true); //新加，用于新骷髅兵的动画
         float centerX = Center.x; // 使用碰撞体中心
         float targetX = patrolDir > 0 ? patrolRightX : patrolLeftX;
         float step = patrolSpeed * Time.deltaTime;
@@ -163,6 +164,7 @@ public class EnemyAI : MonoBehaviour
             patrolDir *= -1;
             state = State.Wait;
             waitTimer = patrolWaitTime;
+            if (animator != null) animator.SetBool("IsWalking", false); //新加，用于新骷髅兵的动画
         }
     }
 
@@ -210,6 +212,8 @@ public class EnemyAI : MonoBehaviour
         // 只在水平方向追击，不跳跃
         float dir = playerTarget.position.x > center.x ? 1f : -1f;
         float step = chaseSpeed * Time.deltaTime;
+
+        if (animator != null) animator.SetBool("IsWalking", true); //新加，用于新骷髅兵的动画
 
         Vector2 pos = transform.position;
         pos.x += dir * step;
