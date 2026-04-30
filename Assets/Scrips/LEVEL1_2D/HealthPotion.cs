@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class HealthPotion : MonoBehaviour
 {
-    [SerializeField] private float healAmount = 20f;
+    [SerializeField] private float healAmount = 100f;
     [Header("掉落时的受力范围")]
     [SerializeField] private float jumpForceMin = 4f;
     [SerializeField] private float jumpForceMax = 7f;
