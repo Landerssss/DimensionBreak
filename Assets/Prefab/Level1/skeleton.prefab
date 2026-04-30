@@ -565,7 +565,7 @@ MonoBehaviour:
   deathDestroyDelay: 1.5
   healthPotionPrefab: {fileID: 6847028660457649530, guid: 1d9f0b5811b66534cb65aa95b2aa5ae9, type: 3}
   dropPotionChance: 0.2
-  defaultFacingLeft: 0
+  defaultFacingLeft: 1
   environmentLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 128

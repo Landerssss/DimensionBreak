@@ -473,7 +473,7 @@ public class PlayerController : MonoBehaviour
         }
 
         // 计算旋转角度，使其朝向发射方向
-        float angle = Mathf.Atan2(fireDir.y, fireDir.x) * Mathf.Rad2Deg;
+        float angle = Mathf.Atan2(fireDir.y, fireDir.x) * Mathf.Rad2Deg - 90f;
         swordObj.transform.rotation = Quaternion.Euler(0, 0, angle);
 
         // 绑定逻辑脚本并初始化

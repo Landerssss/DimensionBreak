@@ -148,7 +148,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.32154077, y: -0.20320421}
+  m_Offset: {x: 0.32154077, y: -0.20356625}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -158,7 +158,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.35691845, y: 0.5935916}
+  m_Size: {x: 0.35691845, y: 0.50999296}
   m_EdgeRadius: 0
 --- !u!50 &5423227621482572740
 Rigidbody2D:
@@ -221,7 +221,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.32049778, y: -0.20626096}
+  m_Offset: {x: 0.3227682, y: -0.2036367}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -231,7 +231,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.35900444, y: 0.58747804}
+  m_Size: {x: 0.35446358, y: 0.5085633}
   m_EdgeRadius: 0
 --- !u!114 &591999592654765751
 MonoBehaviour:
@@ -264,7 +264,7 @@ MonoBehaviour:
   deathDestroyDelay: 1.5
   healthPotionPrefab: {fileID: 6847028660457649530, guid: 1d9f0b5811b66534cb65aa95b2aa5ae9, type: 3}
   dropPotionChance: 0.2
-  defaultFacingLeft: 0
+  defaultFacingLeft: 1
   environmentLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 128
