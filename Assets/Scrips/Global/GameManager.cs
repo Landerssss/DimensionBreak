@@ -65,6 +65,9 @@ public void DebugUnlockAll()
     public bool WaterBombUnlocked => waterBombUnlocked;
     public bool hasEnteredPhase2 = false;
 
+    // ────────────────── 已触发的转场 ──────────────────
+    public System.Collections.Generic.HashSet<string> consumedTriggers = new System.Collections.Generic.HashSet<string>();
+
     // ────────────────── Phase 1 坐标保存（用于 Phase 2 失败后返回原地） ──────────────────
     [HideInInspector] public Vector3 savedPhase1Position;
     [HideInInspector] public bool hasSavedPhase1Position = false;

@@ -65,6 +65,25 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Image     diveCdMask;
     [SerializeField] private TextMeshProUGUI diveCdText;
 
+    // ────────────────── 弓箭 (Sword Projectile) ──────────────────
+    [Header("=== 弓箭 (Sword Projectile) ===")]
+    [SerializeField] private float bowCooldown = 0.5f;
+    [SerializeField] private float bowProjectileSpeed = 20f;
+    [SerializeField] private float bowMaxDistance = 15f;
+    [Tooltip("可选：如果没有提供预制体，代码将动态生成蓝色长矩形")]
+    [SerializeField] private GameObject swordPrefab;
+
+    // ────────────────── 水魔爆 (Water Bomb) ──────────────────
+    [Header("=== 水魔爆 (Water Bomb) ===")]
+    [SerializeField] private float waterBombCooldown = 3.0f;
+    [SerializeField] private float waterBombWidth = 2f;
+    [Tooltip("可选：如果没有提供预制体，代码将动态生成水柱特效")]
+    [SerializeField] private GameObject waterBombPrefab;
+
+    [Header("=== 水魔爆 CD UI ===")]
+    [SerializeField] private Image waterCdMask;
+    [SerializeField] private TextMeshProUGUI waterCdText;
+
     // ────────────────── 内部状态 ──────────────────
     private Rigidbody2D rb;
     private bool isGrounded;
@@ -86,6 +105,10 @@ public class PlayerController : MonoBehaviour
     private float lastHookTime  = -999f;   // 上次钩锁时间
     private Vector2 grappleTarget;
 
+    // 新增技能状态
+    private float lastBowTime = -999f;
+    private float lastWaterBombTime = -999f;
+
     // 引用
     private PlayerStats playerStats;
 
@@ -104,8 +127,9 @@ public class PlayerController : MonoBehaviour
         if (GameManager.Instance != null && GameManager.Instance.hasSavedPhase1Position)
         {
             transform.position = GameManager.Instance.savedPhase1Position;
+            if (rb != null) rb.position = GameManager.Instance.savedPhase1Position;
             GameManager.Instance.hasSavedPhase1Position = false;
-            Debug.Log("[PlayerController] 已恢复 Phase 1 坐标");
+            Debug.Log("[PlayerController] 已恢复 Phase 1 坐标: " + transform.position);
         }
     }
 
@@ -140,6 +164,7 @@ public class PlayerController : MonoBehaviour
         UpdateCooldownUI(dashCdMask, dashCdText, lastDashTime, dashCooldown);
         UpdateCooldownUI(hookCdMask, hookCdText, lastHookTime, hookCooldownTime);
         UpdateCooldownUI(diveCdMask, diveCdText, lastDiveTime, diveCooldown);
+        UpdateCooldownUI(waterCdMask, waterCdText, lastWaterBombTime, waterBombCooldown);
 
         // 钩锁移动中处理
         if (isGrappling)
@@ -155,6 +180,7 @@ public class PlayerController : MonoBehaviour
         HandleJump();
         HandleDash();
         HandleAttack();
+        HandleWaterBomb();
         HandleGrappleInput();
         HandleDiveInput();
     }
@@ -369,10 +395,30 @@ public class PlayerController : MonoBehaviour
 
     void HandleAttack()
     {
-        if (Input.GetMouseButtonDown(0) && Time.time >= lastAttackTime + attackCooldown)
+        if (Input.GetMouseButtonDown(0))
         {
-            lastAttackTime = Time.time;
-            PerformMeleeAttack();
+            // 获取当前武器状态
+            GameManager.WeaponType currentWeapon = GameManager.Instance != null 
+                ? GameManager.Instance.CurrentWeapon 
+                : GameManager.WeaponType.Melee;
+
+            if (currentWeapon == GameManager.WeaponType.Bow)
+            {
+                if (Time.time >= lastBowTime + bowCooldown)
+                {
+                    lastBowTime = Time.time;
+                    HandleSwordFire();
+                }
+            }
+            else if (currentWeapon == GameManager.WeaponType.Melee)
+            {
+                if (Time.time >= lastAttackTime + attackCooldown)
+                {
+                    lastAttackTime = Time.time;
+                    PerformMeleeAttack();
+                }
+            }
+            // 如果是 WaterBomb 模式，左键不触发攻击（按需求使用E键释放水魔爆）
         }
     }
 
@@ -385,6 +431,120 @@ public class PlayerController : MonoBehaviour
             EnemyAI enemy = col.GetComponent<EnemyAI>();
             if (enemy != null) enemy.TakeDamage(dmg);
         }
+    }
+
+    // ────────────────── 弓箭与水魔爆 ──────────────────
+
+    void HandleSwordFire()
+    {
+        Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        mousePos.z = 0f;
+        Vector2 fireDir = (mousePos - transform.position).normalized;
+
+        GameObject swordObj;
+        if (swordPrefab != null)
+        {
+            swordObj = Instantiate(swordPrefab, transform.position, Quaternion.identity);
+        }
+        else
+        {
+            // 动态生成一个蓝色的长条形Quad来表示剑气
+            swordObj = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            swordObj.name = "SwordProjectile_Dynamic";
+            swordObj.transform.position = transform.position;
+            swordObj.transform.localScale = new Vector3(1.5f, 0.15f, 1f); // 极窄长矩形
+            
+            Renderer r = swordObj.GetComponent<Renderer>();
+            if (r != null)
+            {
+                r.material.color = Color.cyan;
+                r.material.shader = Shader.Find("Sprites/Default"); // 使用2D无光照Shader
+            }
+            
+            // 移除默认3D碰撞体，添加2D触发器和刚体
+            Destroy(swordObj.GetComponent<Collider>());
+            BoxCollider2D bc = swordObj.AddComponent<BoxCollider2D>();
+            bc.isTrigger = true;
+            Rigidbody2D rbProj = swordObj.AddComponent<Rigidbody2D>();
+            rbProj.isKinematic = true;
+        }
+
+        // 计算旋转角度，使其朝向发射方向
+        float angle = Mathf.Atan2(fireDir.y, fireDir.x) * Mathf.Rad2Deg;
+        swordObj.transform.rotation = Quaternion.Euler(0, 0, angle);
+
+        // 绑定逻辑脚本并初始化
+        SwordProjectile proj = swordObj.GetComponent<SwordProjectile>();
+        if (proj == null) proj = swordObj.AddComponent<SwordProjectile>();
+        
+        float dmg = playerStats != null ? playerStats.GetFinalDamage(1f) : 10f;
+        proj.Initialize(fireDir, bowProjectileSpeed, bowMaxDistance, dmg, enemyLayer, groundLayer);
+    }
+
+    void HandleWaterBomb()
+    {
+        // 获取当前武器状态
+        GameManager.WeaponType currentWeapon = GameManager.Instance != null 
+            ? GameManager.Instance.CurrentWeapon 
+            : GameManager.WeaponType.Melee;
+
+        // 只有切换到水魔爆武器时，才能按 E 键释放
+        if (currentWeapon == GameManager.WeaponType.WaterBomb)
+        {
+            if (Input.GetKeyDown(KeyCode.E) && Time.time >= lastWaterBombTime + waterBombCooldown)
+            {
+                if (playerStats != null && playerStats.UseManaForWaterBomb())
+                {
+                    lastWaterBombTime = Time.time;
+                    PerformWaterBomb();
+                }
+            }
+        }
+    }
+
+    void PerformWaterBomb()
+    {
+        Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        float startX = mousePos.x;
+        float endY = transform.position.y;
+        float startY = endY + 5f; // 水柱起点设在比玩家高5个单位的位置
+        
+        Vector3 spawnPos = new Vector3(startX, (startY + endY) / 2f, 0f); // 中心位置
+
+        GameObject waterObj;
+        if (waterBombPrefab != null)
+        {
+            waterObj = Instantiate(waterBombPrefab, spawnPos, Quaternion.identity);
+        }
+        else
+        {
+            // 动态生成一个覆盖该区域的半透明长方形来表示水柱
+            waterObj = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            waterObj.name = "WaterBurst_Dynamic";
+            waterObj.transform.position = spawnPos;
+            waterObj.transform.localScale = new Vector3(waterBombWidth, startY - endY, 1f);
+            
+            Renderer r = waterObj.GetComponent<Renderer>();
+            if (r != null)
+            {
+                r.material.color = new Color(0f, 0.5f, 1f, 0.6f); // 半透明深蓝
+                r.material.shader = Shader.Find("Sprites/Default");
+            }
+            Destroy(waterObj.GetComponent<Collider>()); // 移除3D碰撞
+        }
+
+        // 伤害判定（直接使用 Physics2D.OverlapBoxAll，完全无视地形）
+        float dmg = playerStats != null ? playerStats.GetFinalDamage(3f) : 30f; // 假设造成3倍巨额伤害
+        Vector2 size = new Vector2(waterBombWidth, startY - endY);
+        Collider2D[] enemies = Physics2D.OverlapBoxAll(spawnPos, size, 0f, enemyLayer);
+        foreach (var col in enemies)
+        {
+            EnemyAI enemy = col.GetComponent<EnemyAI>();
+            if (enemy != null) enemy.TakeDamage(dmg);
+        }
+
+        // 特效显示极短时间后自动销毁
+        Destroy(waterObj, 0.5f);
     }
 
     // ────────────────── 工具方法 ──────────────────

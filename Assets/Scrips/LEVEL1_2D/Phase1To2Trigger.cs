@@ -26,13 +26,19 @@ public class Phase1To2Trigger : MonoBehaviour
     // 防止重复触发
     private bool triggered;
 
+    public string GetTriggerID()
+    {
+        // 简易唯一标识符
+        return gameObject.name + "_" + transform.position.ToString();
+    }
+
     void Start()
     {
         if (hintText != null)
             hintText.gameObject.SetActive(false);
 
         // 持久化状态检查：若玩家已进入过 Phase 2，恢复已触发状态
-        if (GameManager.Instance != null && GameManager.Instance.hasEnteredPhase2)
+        if (GameManager.Instance != null && GameManager.Instance.consumedTriggers.Contains(GetTriggerID()))
         {
             triggered = true;
             ApplyDarkenedSprite();
@@ -55,10 +61,14 @@ public class Phase1To2Trigger : MonoBehaviour
     {
         if (triggered) return;
         if (!other.CompareTag("Player")) return;
-        if (GameManager.Instance != null && GameManager.Instance.hasEnteredPhase2)
-        return;
 
         triggered = true;
+        
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.consumedTriggers.Add(GetTriggerID());
+        }
+
         ApplyDarkenedSprite();
         Debug.Log("[Phase1To2Trigger] 玩家进入触发区，准备转场至 Phase 2！");
 

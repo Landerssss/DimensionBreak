@@ -64,6 +64,14 @@ public class PaperPlayer : GridEntity
         GridEntity occupant = GridManager.Instance.GetEntityAt(target);
         if (occupant is Turret) return;
 
+        // 检查是否到达出口
+        if (occupant is ExitMarker)
+        {
+            MoveToCell(target);
+            OnReachExit();
+            return;
+        }
+
         // 检查是否撞到敌人 → 死亡
         if (occupant is PaperEnemy)
         {
@@ -74,13 +82,6 @@ public class PaperPlayer : GridEntity
 
         // 正常移动
         MoveToCell(target);
-
-        // 检查是否到达出口
-        if (target.x >= exitColumn)
-        {
-            OnReachExit();
-            return;
-        }
 
         // 通知 TurnManager 玩家已完成移动
         TurnManager.Instance.PlayerFinishedMove();
