@@ -7,297 +7,250 @@ using UnityEngine.Events;
 using UnityEditor;
 #endif
 
-namespace TealFalconEnemySeries{
-
+namespace TealFalconEnemySeries
+{
     public class DarkKnightController : MonoBehaviour
     {
-
-
-        //Movement Settings
-        public float currentSpeed = 0f;
+        // ────────────────── 移动 ──────────────────
+        public float currentSpeed   = 0f;
         public float animationSpeed = 2f;
-        public float acceleration = 4.8f;
-        public float MaxWalkSpeed = 2f;
-        public float MaxRunSpeed = 7f;
-        public float BackStepPower = 200f;
-        public bool movingRight = true;
+        public float acceleration   = 4.8f;
+        public float MaxWalkSpeed   = 2f;
+        public float MaxRunSpeed    = 7f;
+        public float BackStepPower  = 200f;
+        public bool  movingRight    = true;
 
-        //Components
-        private Animator _animator = null;
-        private Rigidbody2D _rigidBody = null;  
-        public Material _matRef = null;
-        private Material instanceMaterial = null;
-        private Vector3 deathPlace;
+        // ────────────────── 组件 ──────────────────
+        private Animator            _animator        = null;
+        private Rigidbody2D         _rigidBody       = null;
+        public  Material            _matRef          = null;
+        private Material            instanceMaterial = null;
+        private Vector3             deathPlace;
         private MaterialPropertyBlock mpb;
 
+        // ────────────────── AI ──────────────────
         [Header("=== AI Settings ===")]
-        public bool isAIEnabled = true;
+        public bool      isAIEnabled    = true;
         public Transform playerTransform;
-        public Vector2 patrolCenter;
-        public float moveRange = 20f; // Boss活动范围
-        public float detectionRange = 8f; // 视野追踪范围
-        public float attackRange = 2.5f; // 攻击距离
-        public float attackCooldown = 2f;
-        private float lastAttackTime;
+        public Vector2   patrolCenter;          // 活动中心，Start() 自动赋值
+        public float     moveRange      = 20f;  // Boss 最大活动半径
+        public float     detectionRange = 8f;   // 开始追击的视野距离
+        public float     attackRange    = 2.5f; // 开始攻击的距离
+        public float     attackCooldown = 2f;
+        private float    lastAttackTime = -999f;
 
-        //Config
+        // ────────────────── 生命值 ──────────────────
+        [Header("=== 生命值 ===")]
+        public float maxHP      = 300f;
+        public float expReward  = 1000f;
+        private float currentHP;
+
+        // ────────────────── 掉落物品 ──────────────────
+        [Header("=== 掉落物品 ===")]
+        public GameObject healthPotionPrefab;
+        [Range(0f, 1f)]
+        public float dropPotionChance = 0.5f;
+
+        // ────────────────── 其他配置 ──────────────────
         public bool block = false;
 
-        public enum MovementState {
-            Idle,
-            Walking,
-            Running,
-        }
-
-        public enum FightingState {
-            OnGuard,
-            Attacking,
-            Hurt,
-            Death,
-            Move,
-            Idle
-        }
-
+        public enum MovementState { Idle, Walking, Running }
+        public enum FightingState { OnGuard, Attacking, Hurt, Death, Move, Idle }
 
         public MovementState CurrentMovementState = MovementState.Idle;
         public FightingState CurrentFightingState = FightingState.Idle;
 
-        public UnityEvent OnHurt,OnDeath, OnCharged;
-        
-        //Color Settings
-        public Color GlowColor;
-        
+        public UnityEvent OnHurt, OnDeath, OnCharged;
 
-        //Death Settings
+        // ────────────────── 颜色 / 死亡溶解 ──────────────────
+        public Color GlowColor;
         public Color DissolveColor;
         public GameObject ExplosionEffect;
         public Transform ExplosionRef;
-        public float DissolveSpeed = 1f;
+        public float DissolveSpeed  = 1f;
         private float DissolveStatus = 1f;
-        public bool destroy = false;
+        public bool  destroy         = false;
+        public float power           = 10f;
 
-        public float power = 10.0f;        // Explosion Power
-
+        // ────────────────── Beam 攻击 ──────────────────
         private Transform BeamAttackRef = null;
-        public GameObject DarkBall;
+        public  GameObject DarkBall;
 
-
+        // ────────────────── 音效 ──────────────────
         public List<SpriteRenderer> SRList = null;
         public List<Rigidbody2D>    RBList = null;
-
-        public AudioSource _Channel = null;
-        public AudioClip BeamSound, DeathExplosionSound, FootStepSound, PainSound, PowerLoadSound, SwordSound;
-
-        //FootStep 
+        public AudioSource  _Channel = null;
+        public AudioClip    BeamSound, DeathExplosionSound, FootStepSound, PainSound, PowerLoadSound, SwordSound;
 
         private float stepTimer = 0f;
-        public float baseStepSpeed = 3f;
-        public float minStepSpeed = 0.1f;
+        public  float baseStepSpeed = 3f;
+        public  float minStepSpeed  = 0.1f;
 
+        // ────────────────── 内部状态 ──────────────────
+        // 防止 ActivateGuard 在同帧被反复调用
+        private bool _guardRequested = false;
 
+        // ══════════════════ 生命周期 ══════════════════
+
+        void Awake()  { SetComponents(); }
+        void OnEnable(){ SetComponents(); }
 
         void Start()
         {
-            patrolCenter = transform.position; // 默认初始位置为活动中心点
+            currentHP    = maxHP;
+            patrolCenter = transform.position;
+
             if (playerTransform == null)
             {
-                GameObject player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null) playerTransform = player.transform;
+                GameObject p = GameObject.FindGameObjectWithTag("Player");
+                if (p != null) playerTransform = p.transform;
             }
         }
 
-        void Awake()
+        void SetComponents()
         {
-           SetComponents();
-
-        }
-
-
-        void OnEnable()
-        {
-           SetComponents();
-        }
-
-        void SetComponents(){
-
-            if(_animator == null)
-                _animator = transform.Find("Root").GetComponent<Animator>();
-
-            if(_rigidBody == null)
+            if (_animator  == null)
+                _animator  = transform.Find("Root").GetComponent<Animator>();
+            if (_rigidBody == null)
                 _rigidBody = GetComponent<Rigidbody2D>();
-
-            if(_matRef == null)
+            if (_matRef    == null)
                 Debug.LogWarning("NO Material Ref Setted!!!");
-
-            if(SRList == null || SRList.Count == 0)
+            if (SRList == null || SRList.Count == 0)
                 SRList = GetAllSpriteRenderersInChildren(transform);
-
-            if(RBList == null || RBList.Count == 0)
+            if (RBList == null || RBList.Count == 0)
                 RBList = GetAllRigidbodiesInChildren(transform);
-            
-            if(BeamAttackRef == null)
+            if (BeamAttackRef == null)
                 BeamAttackRef = transform.Find("Root/Head_Pivot/BeamAttackRef");
 
+            if (IsBuiltIn(_matRef)) return;
 
-            if(IsBuiltIn(_matRef))
-                return;
-
-            //SET MATERIAL OF PRESET
             mpb = new MaterialPropertyBlock();
-
-            if(_matRef.GetTexture("_MainTex") != null)
+            if (_matRef.GetTexture("_MainTex") != null)
                 mpb.SetTexture("_MainTex", _matRef.GetTexture("_MainTex"));
-
-            mpb.SetTexture("_MagentaPNG",_matRef.GetTexture("_MagentaPNG"));
-            mpb.SetTexture("_NormalMap",_matRef.GetTexture("_NormalMap"));
-            mpb.SetTexture("_Emission",_matRef.GetTexture("_Emission"));
-            mpb.SetFloat("_DissolveScale",_matRef.GetFloat("_DissolveScale"));
-            mpb.SetColor("_Glow",GlowColor);
-            mpb.SetColor("_DissolveColor",DissolveColor);
-
-           
+            mpb.SetTexture("_MagentaPNG",   _matRef.GetTexture("_MagentaPNG"));
+            mpb.SetTexture("_NormalMap",    _matRef.GetTexture("_NormalMap"));
+            mpb.SetTexture("_Emission",     _matRef.GetTexture("_Emission"));
+            mpb.SetFloat("_DissolveScale",  _matRef.GetFloat("_DissolveScale"));
+            mpb.SetColor("_Glow",           GlowColor);
+            mpb.SetColor("_DissolveColor",  DissolveColor);
             ApplyChanges();
-
         }
 
-        private void ApplyChanges(){
-               if(IsBuiltIn(_matRef))
-                return;
-
-                foreach (SpriteRenderer sr in SRList)
-                {
-                    sr.SetPropertyBlock(mpb);
-                }
+        void ApplyChanges()
+        {
+            if (IsBuiltIn(_matRef)) return;
+            foreach (SpriteRenderer sr in SRList)
+                sr.SetPropertyBlock(mpb);
         }
 
-        void Update(){
-
-            if(CurrentFightingState == FightingState.Death){
-                DissolveStatus = Mathf.MoveTowards(DissolveStatus, 0f, DissolveSpeed * Time.deltaTime);
-
-                if(!IsBuiltIn(_matRef))
-                    mpb.SetFloat("_Dissolve",DissolveStatus);
-
-                ApplyChanges();
-
-                if(DissolveStatus == 0 && destroy)
-                    Destroy(gameObject);
-                
-                return; // 死亡后停止所有逻辑
-            }
-
-            if (isAIEnabled)
+        void Update()
+        {
+            // ── 死亡溶解 ──
+            if (CurrentFightingState == FightingState.Death)
             {
-                UpdateAI();
+                DissolveStatus = Mathf.MoveTowards(DissolveStatus, 0f, DissolveSpeed * Time.deltaTime);
+                if (!IsBuiltIn(_matRef))
+                    mpb.SetFloat("_Dissolve", DissolveStatus);
+                ApplyChanges();
+                if (DissolveStatus == 0 && destroy) Destroy(gameObject);
+                return;
             }
 
-            // 非Idle和移动状态时，速度平滑减到0
-            if(CurrentFightingState != FightingState.Idle && CurrentFightingState != FightingState.Move && CurrentFightingState != FightingState.OnGuard)
+            // ── AI 决策 ──
+            if (isAIEnabled) UpdateAI();
+
+            // ── 非移动/Idle 状态：速度归零，不处理移动 ──
+            if (CurrentFightingState != FightingState.Idle &&
+                CurrentFightingState != FightingState.Move  &&
+                CurrentFightingState != FightingState.OnGuard)
             {
                 currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, acceleration * Time.deltaTime);
                 _rigidBody.linearVelocity = new Vector2(currentSpeed, _rigidBody.linearVelocity.y);
                 return;
             }
 
+            // ── 正常移动逻辑 ──
             float targetSpeed = 0f;
-
-            //Determine Target Speed
-            switch(CurrentMovementState) {
-                case MovementState.Idle:
-                    targetSpeed = 0f;
-                    break;
-                case MovementState.Walking:
-                    targetSpeed = MaxWalkSpeed;
-                    break;
-                case MovementState.Running:
-                    targetSpeed = MaxRunSpeed;
-                    break;
+            switch (CurrentMovementState)
+            {
+                case MovementState.Walking: targetSpeed = MaxWalkSpeed; break;
+                case MovementState.Running: targetSpeed = MaxRunSpeed;  break;
             }
-        
-            // Adjust the current speed based on acceleration
-            currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed * transform.localScale.x, acceleration * Time.deltaTime);
 
-            _animator.SetFloat("Speed",Mathf.Abs(currentSpeed)/animationSpeed);
-            
-            // Apply the calculated speed to the Rigidbody2D
+            currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed * transform.localScale.x, acceleration * Time.deltaTime);
+            _animator.SetFloat("Speed", Mathf.Abs(currentSpeed) / animationSpeed);
             _rigidBody.linearVelocity = new Vector2(currentSpeed, _rigidBody.linearVelocity.y);
 
-            //Footstep Sound
+            // 脚步声
             float stepSpeed = Mathf.Lerp(baseStepSpeed, minStepSpeed, Mathf.Abs(currentSpeed) / MaxRunSpeed);
-            
             stepTimer += Time.deltaTime;
-
-            if(stepTimer >= stepSpeed && Mathf.Abs(currentSpeed) > 0.1f){
+            if (stepTimer >= stepSpeed && Mathf.Abs(currentSpeed) > 0.1f)
+            {
                 PlaySound(FootStepSound);
                 stepTimer = 0f;
             }
         }
 
-        private void UpdateAI()
+        // ══════════════════ AI ══════════════════
+
+        void UpdateAI()
         {
-            // 只有在Idle或OnGuard状态下才允许AI进行决策
-            if (CurrentFightingState != FightingState.Idle && CurrentFightingState != FightingState.OnGuard)
+            // 只有 Idle 或 OnGuard 状态才允许 AI 做决策
+            if (CurrentFightingState != FightingState.Idle &&
+                CurrentFightingState != FightingState.OnGuard)
                 return;
 
             if (playerTransform == null)
             {
-                GameObject player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null) playerTransform = player.transform;
+                GameObject p = GameObject.FindGameObjectWithTag("Player");
+                if (p != null) playerTransform = p.transform;
                 if (playerTransform == null) return;
             }
 
-            float distToPlayer = Vector2.Distance(transform.position, playerTransform.position);
-            float distToCenter = Vector2.Distance(transform.position, patrolCenter);
+            float distToPlayer  = Vector2.Distance(transform.position, playerTransform.position);
+            float distToCenter  = Vector2.Distance(transform.position, patrolCenter);
             float playerDistToCenter = Vector2.Distance(playerTransform.position, patrolCenter);
 
-            // 核心逻辑：玩家必须在视野范围内，并且玩家和BOSS都必须在活动范围内
-            bool canSeePlayer = (distToPlayer <= detectionRange) && (playerDistToCenter <= moveRange) && (distToCenter <= moveRange);
+            // 玩家在视野内 且 双方都在活动范围内
+            bool canSeePlayer = distToPlayer      <= detectionRange
+                             && playerDistToCenter <= moveRange
+                             && distToCenter       <= moveRange;
 
             if (canSeePlayer)
             {
                 if (distToPlayer <= attackRange)
                 {
-                    // 在攻击范围内
-                    ActivateIdle(); // 停止移动
-                    
+                    // ── 进入攻击范围：停下、面朝玩家 ──
+                    SetIdle_NoGuardToggle();
+                    FaceTarget(playerTransform.position);
+
                     if (Time.time - lastAttackTime > attackCooldown)
                     {
-                        FaceTarget(playerTransform.position);
-                        StartCoroutine(AIAttackSequence());
                         lastAttackTime = Time.time;
+                        StartCoroutine(AIAttackSequence());
                     }
                     else
                     {
-                        // 攻击冷却中，保持面向玩家并防御
-                        FaceTarget(playerTransform.position);
-                        if (CurrentFightingState != FightingState.OnGuard)
-                        {
-                            ActivateGuard();
-                        }
+                        // 冷却中：进入防御（只在尚未防御时切换，避免抖动）
+                        SetGuardOn();
                     }
                 }
                 else
                 {
-                    // 追击玩家
-                    if (CurrentFightingState == FightingState.OnGuard)
-                    {
-                        ActivateGuard(); // 取消防御以便移动
-                    }
+                    // ── 追击：先取消防御再跑 ──
+                    SetGuardOff();
                     FaceTarget(playerTransform.position);
                     ActivateRun();
                 }
             }
             else
             {
-                if (CurrentFightingState == FightingState.OnGuard)
-                {
-                    ActivateGuard(); // 取消防御
-                }
+                // ── 玩家不在视野内：取消防御，回到中心点 ──
+                SetGuardOff();
 
-                // 不追击时，如果距离中心太远则走回去
                 if (distToCenter > 1f)
                 {
-                    FaceTarget((Vector3)patrolCenter);
+                    FaceTarget(patrolCenter);
                     ActivateWalk();
                 }
                 else
@@ -307,358 +260,318 @@ namespace TealFalconEnemySeries{
             }
         }
 
-        private void FaceTarget(Vector3 targetPos)
+        /// <summary>设置 Idle 状态，但不触发 Guard 开关（防止抖动）</summary>
+        void SetIdle_NoGuardToggle()
         {
-            float direction = targetPos.x - transform.position.x;
-            if (direction > 0.1f && transform.localScale.x < 0)
-            {
-                Flip();
-            }
-            else if (direction < -0.1f && transform.localScale.x > 0)
-            {
-                Flip();
-            }
+            CurrentMovementState = MovementState.Idle;
+            if (CurrentFightingState != FightingState.OnGuard)
+                CurrentFightingState = FightingState.Idle;
+        }
+
+        /// <summary>强制进入 OnGuard（只在当前不是 OnGuard 时才切换）</summary>
+        void SetGuardOn()
+        {
+            if (CurrentFightingState == FightingState.OnGuard) return;
+            CurrentMovementState = MovementState.Idle;
+            CurrentFightingState = FightingState.OnGuard;
+            _animator.SetBool("Guard", true);
+        }
+
+        /// <summary>强制退出 OnGuard（只在当前是 OnGuard 时才切换）</summary>
+        void SetGuardOff()
+        {
+            if (CurrentFightingState != FightingState.OnGuard) return;
+            CurrentMovementState = MovementState.Idle;
+            CurrentFightingState = FightingState.Idle;
+            _animator.SetBool("Guard", false);
+        }
+
+        void FaceTarget(Vector3 targetPos)
+        {
+            float dir = targetPos.x - transform.position.x;
+            if      (dir >  0.1f && transform.localScale.x < 0) Flip();
+            else if (dir < -0.1f && transform.localScale.x > 0) Flip();
         }
 
         IEnumerator AIAttackSequence()
         {
-            // 确保完全停止移动
             currentSpeed = 0f;
             _rigidBody.linearVelocity = new Vector2(0, _rigidBody.linearVelocity.y);
 
-            // 随机选择攻击类型，30%概率使用激光
-            bool useBeam = Random.Range(0f, 1f) > 0.7f;
-            
+            bool useBeam = Random.value > 0.7f;
+
             if (useBeam)
             {
+                SetGuardOff();
                 ActivateBeamAttack();
             }
             else
             {
-                if (CurrentFightingState != FightingState.OnGuard)
-                {
-                    ActivateGuard();
-                }
-                
-                // 等待动画状态机进入OnGuard
-                yield return new WaitForSeconds(0.1f);
-                
+                SetGuardOn();
+                yield return new WaitForSeconds(0.1f); // 等状态机稳定
                 ActivateAttack();
             }
         }
 
-        //Change MovementState to Run
-        public void ActivateRun(){
+        // ══════════════════ 受击 / 死亡（新增 TakeDamage 入口）══════════════════
 
-            if(CurrentFightingState != FightingState.Idle)
-                return;
+        /// <summary>
+        /// 供玩家攻击脚本调用的受伤入口（对应 EnemyAI.TakeDamage）
+        /// </summary>
+        public void TakeDamage(float damage)
+        {
+            if (CurrentFightingState == FightingState.Death) return;
 
-            CurrentMovementState = MovementState.Running;
+            currentHP -= damage;
+            Debug.Log($"{gameObject.name} 受到 {damage:F0} 伤害，剩余 HP: {currentHP:F0}");
 
-            _animator.SetBool("Busy",false);
-
+            if (currentHP <= 0f)
+                Die();
+            else
+                ActivateHurt();
         }
 
-        //Change MovementState to Idle
-        public void ActivateIdle(){
+        void Die()
+        {
+            if (CurrentFightingState == FightingState.Death) return;
 
+            Debug.Log($"{gameObject.name} 被击杀！掉落经验 {expReward}");
+
+            // 通知玩家获得经验
+            PlayerStats stats = FindAnyObjectByType<PlayerStats>();
+            if (stats != null) stats.OnEnemyKilled(expReward);
+
+            // 概率掉落血瓶
+            if (healthPotionPrefab != null && Random.value <= dropPotionChance)
+                Instantiate(healthPotionPrefab, transform.position, Quaternion.identity);
+
+            // 如果被冲刺击杀，重置玩家冲刺 CD
+            PlayerController pc = FindAnyObjectByType<PlayerController>();
+            if (pc != null && pc.IsDashing) pc.InstantResetDash();
+
+            ActivateDeath();
+        }
+
+        // ══════════════════ 原有公开方法（保持不变）══════════════════
+
+        public void ActivateRun()
+        {
+            if (CurrentFightingState != FightingState.Idle) return;
+            CurrentMovementState = MovementState.Running;
+            _animator.SetBool("Busy", false);
+        }
+
+        public void ActivateIdle()
+        {
             CurrentMovementState = MovementState.Idle;
             CurrentFightingState = FightingState.Idle;
-            
         }
 
-        //Change MovementState to Walk
-        public void ActivateWalk(){
-
-            if(CurrentFightingState != FightingState.Idle)
-                return;
-
+        public void ActivateWalk()
+        {
+            if (CurrentFightingState != FightingState.Idle) return;
             CurrentMovementState = MovementState.Walking;
-
-
-            _animator.SetBool("Busy",false);
-
+            _animator.SetBool("Busy", false);
         }
 
-        //Change MovementState to Idle-OnGuard
-        public void ActivateGuard(){
-
-            if(CurrentFightingState == FightingState.OnGuard){
+        /// <summary>
+        /// 原版 ActivateGuard 保留（供外部/编辑器手动调用），
+        /// AI 内部统一使用 SetGuardOn / SetGuardOff 避免抖动。
+        /// </summary>
+        public void ActivateGuard()
+        {
+            if (CurrentFightingState == FightingState.OnGuard)
+            {
                 CurrentMovementState = MovementState.Idle;
                 CurrentFightingState = FightingState.Idle;
-                _animator.SetBool("Guard",false);
-
-            }else{
+                _animator.SetBool("Guard", false);
+            }
+            else
+            {
                 CurrentMovementState = MovementState.Idle;
                 CurrentFightingState = FightingState.OnGuard;
-                _animator.SetBool("Guard",true);
+                _animator.SetBool("Guard", true);
             }
-            
         }
 
-
-        
-        //On Guard, Do a Back Step
-        public void ActivateBackStep(){       
-
-            if(CurrentFightingState != FightingState.OnGuard)
-                return;
-
-            _rigidBody.AddForce(transform.localScale.x*Vector2.left * BackStepPower, ForceMode2D.Impulse);
+        public void ActivateBackStep()
+        {
+            if (CurrentFightingState != FightingState.OnGuard) return;
+            _rigidBody.AddForce(transform.localScale.x * Vector2.left * BackStepPower, ForceMode2D.Impulse);
             _animator.SetTrigger("BackStep");
-
         }
 
-        //Exec Attack
-        public void ActivateAttack(){
-
-            if(CurrentFightingState != FightingState.OnGuard)
-                return;
-
+        public void ActivateAttack()
+        {
+            if (CurrentFightingState != FightingState.OnGuard) return;
             CurrentMovementState = MovementState.Idle;
             CurrentFightingState = FightingState.Attacking;
-            _rigidBody.AddForce(transform.localScale.x*Vector2.right * BackStepPower, ForceMode2D.Impulse);
-            
-            currentSpeed = 0f; // 强制归零，防止无法触发协程
-
+            _rigidBody.AddForce(transform.localScale.x * Vector2.right * BackStepPower, ForceMode2D.Impulse);
+            currentSpeed = 0f;
             StartCoroutine(AttackRoutine());
-
         }
 
-        //Exec Beam Attack
-        public void ActivateBeamAttack(){
-
-            if(CurrentFightingState == FightingState.OnGuard){
-                ActivateGuard();
-            }
-
+        public void ActivateBeamAttack()
+        {
+            if (CurrentFightingState == FightingState.OnGuard) SetGuardOff();
             CurrentMovementState = MovementState.Idle;
             CurrentFightingState = FightingState.Attacking;
-                
-            _animator.SetBool("Busy",true);
-                        
-            currentSpeed = 0f; // 强制归零，防止无法触发动画
+            _animator.SetBool("Busy", true);
+            currentSpeed = 0f;
             _animator.SetTrigger("BeamAttack");
-
             StartCoroutine(BeamShootRoutine());
-
         }
 
-        //Exec Hurt
-        public void ActivateHurt(){
+        public void ActivateHurt()
+        {
             CurrentMovementState = MovementState.Idle;
             CurrentFightingState = FightingState.Hurt;
             StartCoroutine(OnHurtRoutine());
             OnHurt.Invoke();
-
             PlaySound(PainSound);
-
-
         }
 
-        //Exec Death and calls Event Destroy.
-        public void ActivateDeath(){
+        public void ActivateDeath()
+        {
             CurrentFightingState = FightingState.Death;
-            _animator.enabled = false;
-            deathPlace = transform.position;
+            _animator.enabled    = false;
+            deathPlace           = transform.position;
             OnDeath.Invoke();
-
             PlaySound(DeathExplosionSound);
-
         }
 
         public void Explode()
         {
-            // Explosion Effect
             if (ExplosionEffect != null)
-            {
                 Instantiate(ExplosionEffect, transform.position, Quaternion.identity);
-            }
 
-        
             foreach (Rigidbody2D rb in RBList)
             {
-     
-                if (rb != null)
-                {
-                    // Calculate Direction
-                   Vector2 direction = new Vector2(rb.transform.position.x - ExplosionRef.position.x,rb.transform.position.y-ExplosionRef.position.y).normalized;
-            
-                    // Apply Force
-                    rb.gravityScale = 0f;
-                    rb.AddForce(direction * power, ForceMode2D.Impulse);
-
-                }
+                if (rb == null) continue;
+                Vector2 dir = new Vector2(
+                    rb.transform.position.x - ExplosionRef.position.x,
+                    rb.transform.position.y - ExplosionRef.position.y).normalized;
+                rb.gravityScale = 0f;
+                rb.AddForce(dir * power, ForceMode2D.Impulse);
             }
-    }
+        }
 
-        public void ResetState(){
-
-            if(DissolveStatus > 0)
-                return;
-
-            _animator.enabled = true;       
-            DissolveStatus = 1f;
-            instanceMaterial.SetFloat("_Dissolve",DissolveStatus);
-            transform.position = deathPlace;
-            _rigidBody.linearVelocity = Vector2.zero;
-            _rigidBody.angularVelocity = 0f;    
-            
+        public void ResetState()
+        {
+            if (DissolveStatus > 0) return;
+            _animator.enabled = true;
+            DissolveStatus    = 1f;
+            instanceMaterial.SetFloat("_Dissolve", DissolveStatus);
+            transform.position           = deathPlace;
+            _rigidBody.linearVelocity    = Vector2.zero;
+            _rigidBody.angularVelocity   = 0f;
             foreach (Rigidbody2D rb in RBList)
             {
-     
-                   // rb.gravityScale = 1f;
-                    rb.linearVelocity = Vector2.zero;
-                    rb.angularVelocity = 0f;    
-            
+                rb.linearVelocity  = Vector2.zero;
+                rb.angularVelocity = 0f;
             }
-
+            currentHP            = maxHP;
             CurrentMovementState = MovementState.Idle;
             CurrentFightingState = FightingState.Idle;
-
         }
 
         public void Flip()
         {
-            // Flip the enemy sprite by inverting the x scale
-            Vector3 localScale = transform.localScale;
-            localScale.x *= -1;
-            transform.localScale = localScale;
-            currentSpeed = currentSpeed * -1;
-
+            Vector3 s = transform.localScale;
+            s.x *= -1;
+            transform.localScale = s;
+            currentSpeed *= -1;
         }
 
-
-
+        // ══════════════════ 协程 ══════════════════
 
         IEnumerator AttackRoutine()
         {
-            // Activar la animación de ataque
             _animator.SetTrigger("Attack");
-
-            
             PlaySound(SwordSound);
 
-            // Esperar hasta que termine la animación de ataque
             while (!_animator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
-            {
                 yield return null;
-            }
 
-            // Esperar hasta que termine la animación de ataque completamente
             while (_animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 0.3f)
-            {
                 yield return null;
-            }
 
-            // Volver al estado de guardia después del ataque
             CurrentFightingState = FightingState.OnGuard;
         }
 
         IEnumerator OnHurtRoutine()
         {
-            // Activate Hurt Animation
             _animator.SetTrigger("Hurt");
 
-            // Waiting till Hurt animation is finished.
             while (!_animator.GetCurrentAnimatorStateInfo(0).IsName("Hurt"))
-            {
                 yield return null;
-            }
 
-            // Waiting time minimum
             while (_animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 1.0f)
-            {
                 yield return null;
-            }
 
-            _animator.SetBool("Busy",false);
-
-            // Back to Guard
+            _animator.SetBool("Busy", false);
             CurrentFightingState = FightingState.OnGuard;
             CurrentMovementState = MovementState.Idle;
-
         }
-
 
         IEnumerator BeamShootRoutine()
         {
-
             while (!_animator.GetCurrentAnimatorStateInfo(0).IsName("BeamAttack"))
-            {
                 yield return null;
-            }
 
-                PlaySound(PowerLoadSound);
-
-
+            PlaySound(PowerLoadSound);
             yield return new WaitForSeconds(2.4f);
-            
-                PlaySound(BeamSound);
+            PlaySound(BeamSound);
 
-            // Shot Ball!!
             if (DarkBall != null)
             {
-                GameObject Ball = Instantiate(DarkBall, BeamAttackRef.position, Quaternion.identity);
-                Ball.transform.localScale = transform.localScale;
-                Vector3 localScale = transform.localScale;
-
+                GameObject ball = Instantiate(DarkBall, BeamAttackRef.position, Quaternion.identity);
+                ball.transform.localScale = transform.localScale;
             }
-            _animator.SetBool("Busy",false);
 
-
+            _animator.SetBool("Busy", false);
+            // BeamAttack 结束后回到 Idle，让 AI 重新决策
+            CurrentFightingState = FightingState.Idle;
         }
 
+        // ══════════════════ 工具 ══════════════════
 
         public List<Rigidbody2D> GetAllRigidbodiesInChildren(Transform parent)
         {
-            List<Rigidbody2D> rigidbodies = new List<Rigidbody2D>(); 
+            var list  = new List<Rigidbody2D>();
+            foreach (var rb in parent.GetComponentsInChildren<Rigidbody2D>())
+                list.Add(rb);
+            return list;
+        }
 
-            Rigidbody2D[] rbArray = parent.GetComponentsInChildren<Rigidbody2D>();
-
-            foreach (Rigidbody2D rb in rbArray)
-            {
-                rigidbodies.Add(rb);
-            }
-
-            return rigidbodies; 
-        }    
-        
-      public List<SpriteRenderer> GetAllSpriteRenderersInChildren(Transform parent)
+        public List<SpriteRenderer> GetAllSpriteRenderersInChildren(Transform parent)
         {
-            List<SpriteRenderer> spriteRenderers = new List<SpriteRenderer>(); 
-
-            SpriteRenderer[] srArray = parent.GetComponentsInChildren<SpriteRenderer>();
-
-
-            foreach (SpriteRenderer sr in srArray)
-            {
-                spriteRenderers.Add(sr);
-            }
-
-            return spriteRenderers; 
+            var list = new List<SpriteRenderer>();
+            foreach (var sr in parent.GetComponentsInChildren<SpriteRenderer>())
+                list.Add(sr);
+            return list;
         }
 
-        private void PlaySound(AudioClip _clip){
-            
-            if(_clip == null){
-                Debug.LogWarning("Sound not setted.");
-                return;
-            }
-        
-            if(_Channel == null){
-                Debug.LogWarning("Audio Source not setted.");
-                return;
-            }
-
-            _Channel.PlayOneShot(_clip);
-
+        void PlaySound(AudioClip clip)
+        {
+            if (clip    == null) { Debug.LogWarning("Sound not set.");        return; }
+            if (_Channel == null){ Debug.LogWarning("AudioSource not set."); return; }
+            _Channel.PlayOneShot(clip);
         }
 
-        // Is Built In?
         public bool IsBuiltIn(Material material)
         {
-            return material.shader.name != "DarkKnight/DarkKnightShader";
+            return material == null || material.shader.name != "DarkKnight/DarkKnightShader";
+        }
+
+        void OnDrawGizmosSelected()
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(Application.isPlaying ? (Vector3)patrolCenter : transform.position, moveRange);
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(transform.position, detectionRange);
+            Gizmos.color = Color.magenta;
+            Gizmos.DrawWireSphere(transform.position, attackRange);
         }
     }
 }
