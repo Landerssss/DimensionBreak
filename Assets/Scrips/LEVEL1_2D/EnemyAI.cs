@@ -69,11 +69,6 @@ public class EnemyAI : MonoBehaviour
     [Header("=== 环境碰撞 ===")]
     [Tooltip("墙壁/障碍物所在的图层，用于巡逻时碰壁转向")]
     [SerializeField] private LayerMask environmentLayer;
-    // 在 [Header("=== 环境碰撞 ===")] 下面加：
-[Tooltip("前方探地射线的垂直偏移（从脚底往前多远检测地面）")]
-[SerializeField] private float groundCheckDistance = 0.5f;
-[Tooltip("地面所在的图层")]
-[SerializeField] private LayerMask groundLayer;
 
     // ────────────────── 内部状态 ──────────────────
     private enum State { Patrol, Wait, Chase, Attack, Dead }
@@ -162,18 +157,6 @@ public class EnemyAI : MonoBehaviour
         transform.position = pos;
 
         FaceDirection(patrolDir);
-        // ★ 新增：前方地面检测，没有地面则提前转向
-        Vector2 frontFoot = new Vector2(
-            Center.x + patrolDir * 0.3f,   // 脚前方水平偏移
-            Center.y - col.bounds.extents.y // 脚底高度
-        );
-        bool hasGround = Physics2D.Raycast(frontFoot, Vector2.down, groundCheckDistance, groundLayer);
-        if (!hasGround)
-        {
-            patrolDir *= -1;
-            FaceDirection(patrolDir);
-            return; // 本帧不继续移动
-        }
 
         // 使用碰撞体中心判断是否到达端点
         if (Mathf.Abs(centerX - targetX) < 0.05f)
