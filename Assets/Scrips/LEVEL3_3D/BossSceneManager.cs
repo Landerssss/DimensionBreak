@@ -80,9 +80,31 @@ public class BossSceneManager : MonoBehaviour
 
     // ────────────────── 5. 战斗阶段 ──────────────────
     [Header("=== 5. 战斗 ===")]
-    [SerializeField] private float bossMaxHP = 1000f;
+    [SerializeField] private float bossMaxHP = 1000f; // 每段血条的血量
     private float bossCurrentHP;
-    public float BossHPRatio => bossCurrentHP / bossMaxHP;
+
+    [Header("=== Boss 多段血条 ===")]
+    [SerializeField] private int totalSegments = 10;
+    [SerializeField] private Color[] customSegmentColors; // 可选：手动指定颜色
+    [SerializeField] private GameObject segmentClearedUI;   // 清空一段时的提示 UI
+    [SerializeField] private float segmentClearedDuration = 0.5f;
+    [SerializeField] private float segmentClearedShake = 0.5f;
+
+    private int currentSegmentIndex = 0; // 0 是第一段，逐渐增加到 totalSegments-1
+
+    /// <summary>
+    /// 获取 Boss 的总体血量比例（考虑所有段位）
+    /// </summary>
+    public float BossHPRatio
+    {
+        get
+        {
+            if (totalSegments <= 0 || bossMaxHP <= 0) return 0f;
+            // 剩余段数所占比例 + 当前段位剩余比例
+            float totalRemaining = (totalSegments - 1 - currentSegmentIndex) * bossMaxHP + bossCurrentHP;
+            return totalRemaining / (totalSegments * bossMaxHP);
+        }
+    }
 
     // ────────────────── 内部 ──────────────────
     private bool playerInputLocked = true;
@@ -101,13 +123,19 @@ public class BossSceneManager : MonoBehaviour
     void Start()
     {
         bossCurrentHP = bossMaxHP;
+        currentSegmentIndex = 0;
         playerInputLocked = true;
 
         // 隐藏 UI
         if (centerText != null)
             centerText.gameObject.SetActive(false);
+        if (segmentClearedUI != null)
+            segmentClearedUI.SetActive(false);
         if (bossHPBar != null && bossHPBarCanvasGroup != null)
             bossHPBarCanvasGroup.alpha = 0f;
+
+        // 初始化血条颜色
+        UpdateHPBarVisual();
 
         // Boss 放到远处高空
         if (bossTransform != null)
@@ -200,19 +228,22 @@ public class BossSceneManager : MonoBehaviour
 
     // ══════════════════ 2. 屏幕震动 ══════════════════
 
-    IEnumerator ScreenShake()
+    IEnumerator ScreenShake(float intensity = -1f, float duration = -1f)
     {
+        float useIntensity = intensity < 0 ? shakeIntensity : intensity;
+        float useDuration = duration < 0 ? shakeDuration : duration;
+
         Transform camT = mainCamera.transform;
         Vector3 originalPos = camT.position;
         float elapsed = 0f;
 
-        while (elapsed < shakeDuration)
+        while (elapsed < useDuration)
         {
             elapsed += Time.deltaTime;
-            float decay = 1f - (elapsed / shakeDuration);
+            float decay = 1f - (elapsed / useDuration);
             Vector3 offset = new Vector3(
-                Random.Range(-1f, 1f) * shakeIntensity * decay,
-                Random.Range(-1f, 1f) * shakeIntensity * decay,
+                Random.Range(-1f, 1f) * useIntensity * decay,
+                Random.Range(-1f, 1f) * useIntensity * decay,
                 0f
             );
             camT.position = originalPos + offset;
@@ -332,17 +363,73 @@ public class BossSceneManager : MonoBehaviour
         if (currentPhase != BossPhase.Fighting) return;
 
         bossCurrentHP -= damage;
-        if (bossCurrentHP < 0f) bossCurrentHP = 0f;
-
-        if (bossHPBar != null)
-            bossHPBar.value = BossHPRatio;
-
-        Debug.Log($"Boss 受击 -{damage:F0}，剩余 {bossCurrentHP:F0}/{bossMaxHP:F0}");
 
         if (bossCurrentHP <= 0f)
         {
-            OnBossDefeated();
+            // 如果还有下一段血条
+            if (currentSegmentIndex < totalSegments - 1)
+            {
+                currentSegmentIndex++;
+                bossCurrentHP = bossMaxHP; // 重新满格
+                StartCoroutine(OnSegmentClearedEffect());
+            }
+            else
+            {
+                bossCurrentHP = 0f;
+                OnBossDefeated();
+            }
         }
+
+        UpdateHPBarVisual();
+    }
+
+    void UpdateHPBarVisual()
+    {
+        if (bossHPBar != null)
+        {
+            bossHPBar.value = bossCurrentHP / bossMaxHP;
+
+            // 更新颜色
+            if (bossHPBar.fillRect != null)
+            {
+                Image fillImage = bossHPBar.fillRect.GetComponent<Image>();
+                if (fillImage != null)
+                {
+                    fillImage.color = GetSegmentColor(currentSegmentIndex);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 获取当前段位的颜色（从青到红）
+    /// </summary>
+    Color GetSegmentColor(int index)
+    {
+        if (customSegmentColors != null && customSegmentColors.Length > 0)
+        {
+            return customSegmentColors[index % customSegmentColors.Length];
+        }
+
+        // 自动计算：从青色 (Hue 180) 到红色 (Hue 0)
+        // 注意：Hue 从 0.5 (180/360) 递减到 0
+        float t = (float)index / (totalSegments - 1);
+        float hue = Mathf.Lerp(0.5f, 0f, t);
+        return Color.HSVToRGB(hue, 0.8f, 1f);
+    }
+
+    IEnumerator OnSegmentClearedEffect()
+    {
+        // 提示 UI
+        if (segmentClearedUI != null)
+        {
+            segmentClearedUI.SetActive(true);
+            yield return new WaitForSeconds(segmentClearedDuration);
+            segmentClearedUI.SetActive(false);
+        }
+
+        // 屏幕微震
+        yield return StartCoroutine(ScreenShake(segmentClearedShake, 0.2f));
     }
 
     void OnBossDefeated()
