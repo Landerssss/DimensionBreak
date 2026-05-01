@@ -7324,6 +7324,7 @@ MonoBehaviour:
   bossTargetY: 0
   centerText: {fileID: 1341597984}
   bossHPBar: {fileID: 1638034399}
+  bossHPBarFill: {fileID: 0}
   bossHPBarCanvasGroup: {fileID: 1638034397}
   fallStartHeight: 80
   fallEndHeight: 2
@@ -7341,6 +7342,8 @@ MonoBehaviour:
   bossRisingText: "\u51FB\u8D25\u4ED6\uFF01"
   textToHPBarDelay: 3
   bossMaxHP: 100
+  totalHealthSegments: 10
+  segmentColors: []
 --- !u!4 &1492834617
 Transform:
   m_ObjectHideFlags: 0
@@ -7756,6 +7759,8 @@ MonoBehaviour:
   playerCamera: {fileID: 0}
   baseFOV: 70
   sprintFOVBoost: 8
+  jumpHeight: 2.5
+  gravity: -20
   fovLerpSpeed: 5
 --- !u!114 &1712181849
 MonoBehaviour:
@@ -8594,6 +8599,22 @@ PrefabInstance:
       propertyPath: bossMaxHP
       value: 1000
       objectReference: {fileID: 0}
+    - target: {fileID: 1784322574444016095, guid: ac68fea4943a9e04c8b28c022af05e9c, type: 3}
+      propertyPath: mainCamera
+      value: 
+      objectReference: {fileID: 1946779270}
+    - target: {fileID: 1784322574444016095, guid: ac68fea4943a9e04c8b28c022af05e9c, type: 3}
+      propertyPath: walkTrigger
+      value: 
+      objectReference: {fileID: 549185280}
+    - target: {fileID: 1784322574444016095, guid: ac68fea4943a9e04c8b28c022af05e9c, type: 3}
+      propertyPath: bossTransform
+      value: 
+      objectReference: {fileID: 940726820}
+    - target: {fileID: 1784322574444016095, guid: ac68fea4943a9e04c8b28c022af05e9c, type: 3}
+      propertyPath: playerTransform
+      value: 
+      objectReference: {fileID: 1712181846}
     - target: {fileID: 5786818240996037693, guid: ac68fea4943a9e04c8b28c022af05e9c, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.1
