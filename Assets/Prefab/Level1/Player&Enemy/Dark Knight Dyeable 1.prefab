@@ -26,23 +26,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 725047363310695442, guid: 42f3cb3cd6c28a74faa2a08febc529ac, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.9
+      value: 1.1
       objectReference: {fileID: 0}
     - target: {fileID: 725047363310695442, guid: 42f3cb3cd6c28a74faa2a08febc529ac, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.9
+      value: 1.1
       objectReference: {fileID: 0}
     - target: {fileID: 725047363310695442, guid: 42f3cb3cd6c28a74faa2a08febc529ac, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.9
+      value: 1.1
       objectReference: {fileID: 0}
     - target: {fileID: 725047363310695442, guid: 42f3cb3cd6c28a74faa2a08febc529ac, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 190.3
+      value: 106.7
       objectReference: {fileID: 0}
     - target: {fileID: 725047363310695442, guid: 42f3cb3cd6c28a74faa2a08febc529ac, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.54
+      value: -1.2
       objectReference: {fileID: 0}
     - target: {fileID: 725047363310695442, guid: 42f3cb3cd6c28a74faa2a08febc529ac, type: 3}
       propertyPath: m_LocalPosition.z
@@ -190,11 +190,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2842584330731979963, guid: 42f3cb3cd6c28a74faa2a08febc529ac, type: 3}
       propertyPath: m_Size.x
-      value: 2.0914402
+      value: 2.299889
+      objectReference: {fileID: 0}
+    - target: {fileID: 2842584330731979963, guid: 42f3cb3cd6c28a74faa2a08febc529ac, type: 3}
+      propertyPath: m_Size.y
+      value: 7.2706757
       objectReference: {fileID: 0}
     - target: {fileID: 2842584330731979963, guid: 42f3cb3cd6c28a74faa2a08febc529ac, type: 3}
       propertyPath: m_Offset.x
-      value: 0.993202
+      value: 0.6631649
+      objectReference: {fileID: 0}
+    - target: {fileID: 2842584330731979963, guid: 42f3cb3cd6c28a74faa2a08febc529ac, type: 3}
+      propertyPath: m_Offset.y
+      value: -1.9446621
       objectReference: {fileID: 0}
     - target: {fileID: 3019250218370790677, guid: 42f3cb3cd6c28a74faa2a08febc529ac, type: 3}
       propertyPath: m_Layer
@@ -434,11 +442,13 @@ MonoBehaviour:
   playerLayer:
     serializedVersion: 2
     m_Bits: 1
-  attackRange: 1.8
+  attackRange: 7
   beamAttackRange: 8
-  attackDamage: 35
+  attackDamage: 50
   attackCooldown: 3
+  beamCooldown: 5
   damageDelay: 0.5
+  runDistance: 4.5
   expReward: 2000
   healthPotionPrefab: {fileID: 6847028660457649530, guid: 1d9f0b5811b66534cb65aa95b2aa5ae9, type: 3}
   dropPotionChance: 1
@@ -474,11 +484,11 @@ BoxCollider2D:
   m_CallbackLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: 0.65137523, y: -1.9281025}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -488,5 +498,5 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 2.3027506, y: 7.149083}
   m_EdgeRadius: 0
