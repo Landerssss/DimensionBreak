@@ -144,12 +144,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 58448826}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 743.16956, y: 789.16785, z: -6.033745}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 752661967}
+  m_Father: {fileID: 2125398881}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &58448828
 MonoBehaviour:
@@ -273,11 +273,11 @@ Transform:
   m_GameObject: {fileID: 157035679}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1526.45, y: 906.2519, z: -1.8599572}
+  m_LocalPosition: {x: 783.2804, y: 117.084045, z: 4.1737876}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 752661967}
+  m_Father: {fileID: 2125398881}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &164607675
 GameObject:
@@ -2744,41 +2744,6 @@ RectTransform:
   m_AnchoredPosition: {x: -5, y: 0}
   m_SizeDelta: {x: -20, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!1 &752661966
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 752661967}
-  m_Layer: 0
-  m_Name: Manager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &752661967
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 752661966}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -21.53003, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 2006921768}
-  - {fileID: 58448827}
-  - {fileID: 157035681}
-  - {fileID: 2125398881}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &764690498
 GameObject:
   m_ObjectHideFlags: 0
@@ -12792,7 +12757,7 @@ Transform:
   m_GameObject: {fileID: 1882315939}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -1026.0072, y: -324, z: 6.8835154}
+  m_LocalPosition: {x: -1026.0072, y: -321.98743, z: 6.8835154}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -13348,12 +13313,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2006921767}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 743.16956, y: 789.16785, z: -6.033745}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 752661967}
+  m_Father: {fileID: 2125398881}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2006921770
 MonoBehaviour:
@@ -13642,7 +13607,7 @@ GameObject:
   - component: {fileID: 2125398881}
   - component: {fileID: 2125398882}
   m_Layer: 0
-  m_Name: GameManager
+  m_Name: Manager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -13656,12 +13621,15 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2125398880}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 743.16956, y: 789.16785, z: -6.033745}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 721.6395, y: 789.16785, z: -6.033745}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 752661967}
+  m_Children:
+  - {fileID: 2006921768}
+  - {fileID: 58448827}
+  - {fileID: 157035681}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2125398882
 MonoBehaviour:
@@ -13804,12 +13772,7 @@ PrefabInstance:
       propertyPath: m_Name
       value: Dark Knight Dyeable
       objectReference: {fileID: 0}
-    - target: {fileID: 3841345918091441516, guid: f023eb75a79263a44a28525e192905b3, type: 3}
-      propertyPath: m_Constraints
-      value: 4
-      objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 1349855738565029743, guid: f023eb75a79263a44a28525e192905b3, type: 3}
+    m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -14167,11 +14130,11 @@ PrefabInstance:
       objectReference: {fileID: 6052688420094902307, guid: 885dcdd3c73224f409fa8910ba113f1d, type: 3}
     - target: {fileID: 404161915212286098, guid: af418b1e030f79141900ac501434e567, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -9.9
+      value: -13.1
       objectReference: {fileID: 0}
     - target: {fileID: 404161915212286098, guid: af418b1e030f79141900ac501434e567, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -3.4
+      value: -6.18
       objectReference: {fileID: 0}
     - target: {fileID: 404161915212286098, guid: af418b1e030f79141900ac501434e567, type: 3}
       propertyPath: m_LocalPosition.z
@@ -14713,6 +14676,6 @@ SceneRoots:
   - {fileID: 1053377475}
   - {fileID: 1335533498}
   - {fileID: 1832294709}
+  - {fileID: 2125398881}
   - {fileID: 533359856}
   - {fileID: 1894052606}
-  - {fileID: 752661967}
