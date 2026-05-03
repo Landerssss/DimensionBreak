@@ -75,7 +75,7 @@ public class BossSceneManager : MonoBehaviour
     [SerializeField] private Vector3 bossStartOffset = new Vector3(0f, 30f, 80f); // 正前方远处高空
     [SerializeField] private float bossFlyDuration = 3f;       // 飞行时长
     [SerializeField] private float bossFlyRotateSpeed = 180f;  // 飞行时旋转速度
-    [SerializeField] private string bossRisingText = "击败他！";
+    [SerializeField] private string bossRisingText = "Fight！";
     [SerializeField] private float textToHPBarDelay = 3f;
 
     // ────────────────── 5. 战斗阶段 ──────────────────
@@ -89,8 +89,13 @@ public class BossSceneManager : MonoBehaviour
     [SerializeField] private GameObject segmentClearedUI;   // 清空一段时的提示 UI
     [SerializeField] private float segmentClearedDuration = 0.5f;
     [SerializeField] private float segmentClearedShake = 0.5f;
+    [SerializeField] private AudioClip segmentBreakSFX;    // 分段清空音效
 
     private int currentSegmentIndex = 0; // 0 是第一段，逐渐增加到 totalSegments-1
+
+    [Header("=== 文本配置 ===")]
+    [SerializeField] private Color bossRisingTextColor = Color.white;
+    [SerializeField] private float bossRisingFontSize = 80f;
 
     /// <summary>
     /// 获取 Boss 的总体血量比例（考虑所有段位）
@@ -112,12 +117,15 @@ public class BossSceneManager : MonoBehaviour
 
     private bool walkTriggerReached;
     private Vector3 bossStartPosition; // Boss 最终落点
+    private AudioSource audioSource;
 
     // ══════════════════ 生命周期 ══════════════════
 
     void Awake()
     {
         Instance = this;
+        audioSource = gameObject.GetComponent<AudioSource>();
+        if (audioSource == null) audioSource = gameObject.AddComponent<AudioSource>();
     }
 
     void Start()
@@ -192,7 +200,7 @@ public class BossSceneManager : MonoBehaviour
 
         // ─── 阶段 3：Boss 从地底升起 ───
         currentPhase = BossPhase.BossRising;
-        ShowCenterText(bossRisingText);
+        ShowCenterText(bossRisingText, bossRisingTextColor, bossRisingFontSize);
         yield return StartCoroutine(BossRiseSequence());
 
         // ─── 文字过渡到血条 ───
@@ -420,6 +428,12 @@ public class BossSceneManager : MonoBehaviour
 
     IEnumerator OnSegmentClearedEffect()
     {
+        // 播放音效
+        if (audioSource != null && segmentBreakSFX != null)
+        {
+            audioSource.PlayOneShot(segmentBreakSFX);
+        }
+
         // 提示 UI
         if (segmentClearedUI != null)
         {
@@ -441,6 +455,12 @@ public class BossSceneManager : MonoBehaviour
 
         ShowCenterText("次元突破！");
 
+        // 击败后直接销毁 Boss 物体
+        if (bossTransform != null)
+        {
+            Destroy(bossTransform.gameObject);
+        }
+
         // TODO: 播放最终演出动画，然后回到主菜单或结算画面
         StartCoroutine(EndSequence());
     }
@@ -455,10 +475,18 @@ public class BossSceneManager : MonoBehaviour
 
     // ══════════════════ UI 工具 ══════════════════
 
-    void ShowCenterText(string text)
+    void ShowCenterText(string text, Color? color = null, float? fontSize = null)
     {
         if (centerText == null) return;
+        
         centerText.text = text;
+        
+        if (color.HasValue) centerText.color = color.Value;
+        else centerText.color = Color.white; // 默认重置为白色
+
+        if (fontSize.HasValue) centerText.fontSize = fontSize.Value;
+        // 注意：如果不传 fontSize，通常保持 UI 默认值，或者你可以设置一个默认值
+
         centerText.gameObject.SetActive(true);
     }
 
