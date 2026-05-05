@@ -269,7 +269,9 @@ public class PlayerController : MonoBehaviour
         foreach (var col in enemies)
         {
             EnemyAI enemy = col.GetComponent<EnemyAI>();
-            if (enemy != null) enemy.TakeDamage(dmg);
+            if (enemy != null) { enemy.TakeDamage(dmg); continue; }
+            DarkKnightAI dk = col.GetComponent<DarkKnightAI>();
+            if (dk != null) dk.TakeDamage(dmg);
         }
         rb.linearVelocity = new Vector2(0, jumpForce * 0.5f); // 落地微量反弹，增加手感
         // CD 已在 ActivateDive() 记录，无需协程
@@ -429,7 +431,9 @@ public class PlayerController : MonoBehaviour
         foreach (var col in enemies)
         {
             EnemyAI enemy = col.GetComponent<EnemyAI>();
-            if (enemy != null) enemy.TakeDamage(dmg);
+            if (enemy != null) { enemy.TakeDamage(dmg); continue; }
+            DarkKnightAI dk = col.GetComponent<DarkKnightAI>();
+            if (dk != null) dk.TakeDamage(dmg);
         }
     }
 
@@ -543,7 +547,9 @@ public class PlayerController : MonoBehaviour
         foreach (var col in enemies)
         {
             EnemyAI enemy = col.GetComponent<EnemyAI>();
-            if (enemy != null) enemy.TakeDamage(dmg);
+            if (enemy != null) { enemy.TakeDamage(dmg); continue; }
+            DarkKnightAI dk = col.GetComponent<DarkKnightAI>();
+            if (dk != null) dk.TakeDamage(dmg);
         }
 
         // 特效显示极短时间后自动销毁

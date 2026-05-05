@@ -83,6 +83,7 @@ public class EnemyAI : MonoBehaviour
 
     private Transform playerTarget;
     private SpriteRenderer spriteRenderer;
+    private SpriteRenderer[] allSpriteRenderers;
     private Rigidbody2D rb;
     private Collider2D col; // 主碰撞体，用于 bounds.center
     private Animator animator;
@@ -99,7 +100,8 @@ public class EnemyAI : MonoBehaviour
     {
         currentHP = maxHP;
 
-        spriteRenderer = GetComponent<SpriteRenderer>();
+        spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        allSpriteRenderers = GetComponentsInChildren<SpriteRenderer>();
         rb = GetComponent<Rigidbody2D>();
         col = GetComponent<Collider2D>();
         animator = GetComponent<Animator>();
@@ -330,9 +332,12 @@ public class EnemyAI : MonoBehaviour
         Debug.Log($"{gameObject.name} 受到 {damage:F0} 伤害，剩余 HP: {currentHP:F0}");
 
         // 闪烁反馈
-        if (spriteRenderer != null)
+        if (allSpriteRenderers != null && allSpriteRenderers.Length > 0)
         {
-            spriteRenderer.color = Color.red;
+            foreach (var sr in allSpriteRenderers)
+            {
+                sr.color = Color.red;
+            }
             Invoke(nameof(ResetColor), hitFlashDuration);
         }
 
@@ -344,8 +349,13 @@ public class EnemyAI : MonoBehaviour
 
     void ResetColor()
     {
-        if (spriteRenderer != null)
-            spriteRenderer.color = Color.white;
+        if (allSpriteRenderers != null)
+        {
+            foreach (var sr in allSpriteRenderers)
+            {
+                sr.color = Color.white;
+            }
+        }
     }
 
     void Die()

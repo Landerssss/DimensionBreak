@@ -52,6 +52,11 @@ public class SwordProjectile : MonoBehaviour
             {
                 enemy.TakeDamage(damage);
             }
+            else
+            {
+                DarkKnightAI dk = col.GetComponent<DarkKnightAI>();
+                if (dk != null) dk.TakeDamage(damage);
+            }
             Destroy(gameObject); // 造成伤害后立即销毁
         }
         // 如果碰到地面或障碍物

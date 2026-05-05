@@ -32,7 +32,7 @@ public class DarkKnightAI : MonoBehaviour
     [SerializeField] private float beamAttackRange = 8f;
     [SerializeField] private float attackDamage = 35f;
     [SerializeField] private float attackCooldown = 1.6f; 
-    [SerializeField] private float beamCooldown = 5.0f;   
+    [SerializeField] private float beamCooldown = 6.0f;   
     [SerializeField] private float damageDelay = 0.45f;   
     [SerializeField] private float runDistance = 4.5f; 
 
@@ -42,6 +42,10 @@ public class DarkKnightAI : MonoBehaviour
     [SerializeField] private GameObject healthPotionPrefab;
     [SerializeField] private float dropPotionChance = 1.0f;
     [SerializeField] private float deathDestroyDelay = 3.5f;
+
+    // ────────────────── 受击反馈 ──────────────────
+    [Header("=== 受击反馈 ===")]
+    [SerializeField] private float hitFlashDuration = 0.1f;
 
     // ────────────────── 状态定义 ──────────────────
     private enum AIState { Patrol, Chase, Attack, Cooldown, Dead }
@@ -78,6 +82,7 @@ public class DarkKnightAI : MonoBehaviour
         patrolLeftX = startPos.x - patrolLeftOffset;
         patrolRightX = startPos.x + patrolRightOffset;
         currentState = AIState.Patrol;
+        beamTimer = beamCooldown; // 开局技能进入CD，防止立即释放
     }
 
     private void Update()
@@ -301,8 +306,34 @@ public class DarkKnightAI : MonoBehaviour
     {
         if (currentState == AIState.Dead) return;
         currentHP -= damage;
+
+        // 受击时立即清零速度，防止惯性冲刺
+        if (rb != null) rb.linearVelocity = Vector2.zero;
+        body.currentSpeed = 0;
+
+        // 闪烁反馈：遍历 DarkKnightController 已收集的所有子 SpriteRenderer
+        if (body.SRList != null && body.SRList.Count > 0)
+        {
+            foreach (var sr in body.SRList)
+            {
+                sr.color = Color.red;
+            }
+            Invoke(nameof(ResetColor), hitFlashDuration);
+        }
+
         body.ActivateHurt();
         if (currentHP <= 0) Die();
+    }
+
+    private void ResetColor()
+    {
+        if (body != null && body.SRList != null)
+        {
+            foreach (var sr in body.SRList)
+            {
+                sr.color = Color.white;
+            }
+        }
     }
 
     private void Die()
