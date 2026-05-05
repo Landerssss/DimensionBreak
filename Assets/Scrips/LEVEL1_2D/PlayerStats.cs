@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System;
 using System.Collections;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 玩家数值系统：生命值 / 蓝量 / 经验 / 等级 / 攻击力 / 暴击。
@@ -155,14 +156,13 @@ public class PlayerStats : MonoBehaviour
     }
 
     /// <summary>
-    /// 玩家死亡逻辑：可在此扩展重载关卡、显示 UI 等。
+    /// 玩家死亡逻辑：触发重载关卡
     /// </summary>
     private void OnPlayerDied()
     {
         Debug.Log("玩家死亡！触发重来逻辑...");
-        // TODO: 触发死亡动画、显示死亡 UI、重载场景等
-        // 示例：UnityEngine.SceneManagement.SceneManager.LoadScene(
-        //     UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex);
+        // 重新加载当前场景（即第一阶段）
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     /// <summary>

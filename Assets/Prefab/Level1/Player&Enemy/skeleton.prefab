@@ -62,11 +62,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -7552582706839291426, guid: a3779e50bc9323e41946f7b5517235c6, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 2.1
+      value: 26.5
       objectReference: {fileID: 0}
     - target: {fileID: -7552582706839291426, guid: a3779e50bc9323e41946f7b5517235c6, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -6.08
+      value: -7.48
       objectReference: {fileID: 0}
     - target: {fileID: -7552582706839291426, guid: a3779e50bc9323e41946f7b5517235c6, type: 3}
       propertyPath: m_LocalPosition.z
@@ -78,7 +78,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -7552582706839291426, guid: a3779e50bc9323e41946f7b5517235c6, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -7552582706839291426, guid: a3779e50bc9323e41946f7b5517235c6, type: 3}
       propertyPath: m_LocalRotation.y
@@ -86,7 +86,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -7552582706839291426, guid: a3779e50bc9323e41946f7b5517235c6, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -7552582706839291426, guid: a3779e50bc9323e41946f7b5517235c6, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -519,7 +519,7 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 1
+  m_Mass: 9999
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_GravityScale: 1
@@ -569,3 +569,4 @@ MonoBehaviour:
   environmentLayer:
     serializedVersion: 2
     m_Bits: 128
+  animator: {fileID: 1953748006815915779}
