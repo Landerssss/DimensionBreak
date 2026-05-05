@@ -3815,6 +3815,11 @@ Tilemap:
     e31: 0
     e32: 0
     e33: 1
+--- !u!4 &880260680 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8463398794754162820, guid: af418b1e030f79141900ac501434e567, type: 3}
+  m_PrefabInstance: {fileID: 4114850423736467989}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &918774412
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -15404,6 +15409,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 247701552115197065, guid: af418b1e030f79141900ac501434e567, type: 3}
+      propertyPath: handPoint
+      value: 
+      objectReference: {fileID: 880260680}
     - target: {fileID: 247701552115197065, guid: af418b1e030f79141900ac501434e567, type: 3}
       propertyPath: dashCdMask
       value: 

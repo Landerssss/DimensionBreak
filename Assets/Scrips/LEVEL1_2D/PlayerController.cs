@@ -48,6 +48,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float grappleMaxDistance = 10f;
     [SerializeField] private float grappleArriveThreshold = 0.5f;
     [SerializeField] private LineRenderer grappleLineRenderer;
+    [Tooltip("钩锁线段起点（拖入角色手部骨骼节点）；留空则自动使用角色中心")]
+    [SerializeField] private Transform handPoint;
     [SerializeField] private float hookCooldownTime = 2.0f;
 
     [Header("=== 钩锁 CD UI ===")]
@@ -128,8 +130,8 @@ public class PlayerController : MonoBehaviour
             if (grappleLineRenderer.sharedMaterial == null)
             {
                 grappleLineRenderer.material = new Material(Shader.Find("Sprites/Default"));
-                grappleLineRenderer.startColor = new Color(0.4f, 0.9f, 1f, 1f);   // 青蓝色
-                grappleLineRenderer.endColor   = new Color(1f,  1f,  1f, 0.6f);   // 白色渐隐
+                grappleLineRenderer.startColor = new Color(0f,   0.67f, 1f,   1f);  // 蓝色 #00AAFF
+                grappleLineRenderer.endColor   = new Color(0.61f, 0.19f, 1f, 0.9f); // 紫色 #9B30FF
             }
 
             // ── 保证 2D 场景中 Z 轴为 0（面板默认 Point1.Z=1 会偏移画面）──
@@ -308,7 +310,8 @@ public class PlayerController : MonoBehaviour
 
         Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         mouseWorld.z = 0;
-        Vector2 origin = transform.position;
+        // 优先使用手部节点作为钩锁起点，未指定则回退到角色中心
+        Vector2 origin = handPoint != null ? (Vector2)handPoint.position : (Vector2)transform.position;
         Vector2 dir = ((Vector2)mouseWorld - origin).normalized;
         
         // 根据鼠标距离截断最大范围
@@ -323,7 +326,7 @@ public class PlayerController : MonoBehaviour
         if (grappleLineRenderer != null)
         {
             grappleLineRenderer.enabled = true;
-            grappleLineRenderer.SetPosition(0, transform.position);
+            grappleLineRenderer.SetPosition(0, handPoint != null ? handPoint.position : transform.position);
             grappleLineRenderer.SetPosition(1, grappleTarget);
         }
     }
@@ -342,7 +345,8 @@ public class PlayerController : MonoBehaviour
         rb.linearVelocity = direction * grappleSpeed;
 
         if (grappleLineRenderer != null)
-            grappleLineRenderer.SetPosition(0, transform.position);
+            // 每帧更新线段起点（跟随手部移动）
+            grappleLineRenderer.SetPosition(0, handPoint != null ? handPoint.position : transform.position);
 
         // 优化3-C：到达虚拟目标点，执行结束逻辑
         if (Vector2.Distance(pos, grappleTarget) < grappleArriveThreshold)
