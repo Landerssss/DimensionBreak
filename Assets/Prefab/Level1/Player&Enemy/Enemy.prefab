@@ -15,9 +15,10 @@ GameObject:
   - component: {fileID: 5423227621482572740}
   - component: {fileID: 6845398981166526107}
   - component: {fileID: 591999592654765751}
-  m_Layer: 0
+  - component: {fileID: 8326559497579896635}
+  m_Layer: 7
   m_Name: Enemy
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -148,17 +149,17 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.32154077, y: -0.20356625}
+  m_Offset: {x: -0.004385948, y: 0.17864776}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.5, y: 0.5}
+    pivot: {x: 0.75, y: 0.1}
     oldSize: {x: 1.4, y: 0.93}
     newSize: {x: 1.4, y: 0.93}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.35691845, y: 0.50999296}
+  m_Size: {x: 0.32043076, y: 0.5509081}
   m_EdgeRadius: 0
 --- !u!50 &5423227621482572740
 Rigidbody2D:
@@ -221,17 +222,17 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.3227682, y: -0.2036367}
+  m_Offset: {x: -0.0063529015, y: 0.19993114}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.5, y: 0.5}
+    pivot: {x: 0.75, y: 0.1}
     oldSize: {x: 1.4, y: 0.93}
     newSize: {x: 1.4, y: 0.93}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.35446358, y: 0.5085633}
+  m_Size: {x: 0.44029903, y: 0.6676812}
   m_EdgeRadius: 0
 --- !u!114 &591999592654765751
 MonoBehaviour:
@@ -268,3 +269,55 @@ MonoBehaviour:
   environmentLayer:
     serializedVersion: 2
     m_Bits: 128
+  animator: {fileID: 0}
+--- !u!114 &8326559497579896635
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6775737461407953378}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 606ac2d4e0d654649be6469ba98fb062, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHP: 200
+  patrolSpeed: 2
+  patrolLeftOffset: 4
+  patrolRightOffset: 4
+  patrolWaitTime: 0.5
+  detectRadius: 6
+  chaseSpeed: 4.5
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 1
+  loseChasingDistance: 10
+  attackRange: 1.5
+  attackDamage: 15
+  attackDuration: 0.8
+  attackCooldown: 1.5
+  attackDamageDelay: 0.35
+  castDamageMultiplier: 2.5
+  castRange: 2
+  castDuration: 1.2
+  castCooldown: 6
+  castDamageDelay: 0.5
+  castDamageRadius: 2
+  spellTeleportDistance: 3
+  spellDuration: 0.8
+  spellCooldown: 8
+  spellTeleportDelay: 0.3
+  spellHPThreshold: 0.5
+  expReward: 1500
+  hurtDuration: 0.4
+  hitFlashDuration: 0.15
+  deathDestroyDelay: 2
+  healthPotionPrefab: {fileID: 6847028660457649530, guid: 1d9f0b5811b66534cb65aa95b2aa5ae9, type: 3}
+  dropPotionChance: 0.3
+  defaultFacingLeft: 0
+  environmentLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  flashRenderers: []
+  animator: {fileID: 3189234701942225447}
