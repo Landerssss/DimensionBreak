@@ -121,7 +121,21 @@ public class PlayerController : MonoBehaviour
         playerStats = GetComponent<PlayerStats>();
 
         if (grappleLineRenderer != null)
+        {
             grappleLineRenderer.enabled = false;
+
+            // ── 自动补全材质（面板 Materials 列表为空时线段不可见）──
+            if (grappleLineRenderer.sharedMaterial == null)
+            {
+                grappleLineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+                grappleLineRenderer.startColor = new Color(0.4f, 0.9f, 1f, 1f);   // 青蓝色
+                grappleLineRenderer.endColor   = new Color(1f,  1f,  1f, 0.6f);   // 白色渐隐
+            }
+
+            // ── 保证 2D 场景中 Z 轴为 0（面板默认 Point1.Z=1 会偏移画面）──
+            grappleLineRenderer.SetPosition(0, Vector3.zero);
+            grappleLineRenderer.SetPosition(1, Vector3.zero);
+        }
 
         // Phase 2 失败 / 通关返回 Phase 1 → 恢复之前的坐标
         if (GameManager.Instance != null && GameManager.Instance.hasSavedPhase1Position)
