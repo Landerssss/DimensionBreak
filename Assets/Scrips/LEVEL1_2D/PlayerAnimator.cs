@@ -10,7 +10,7 @@ public class PlayerAnimator : MonoBehaviour
     // Animator 参数名常量，避免拼写错误
     private static readonly int isRun  = Animator.StringToHash("isRun");
     private static readonly int IsGrounded = Animator.StringToHash("isGrounded");
-    private static readonly int isJumpTrig   = Animator.StringToHash("isJump");
+    private static readonly int isJumpBool   = Animator.StringToHash("isJump");
     private static readonly int aTrig = Animator.StringToHash("attack");
     private static readonly int hurtTrig   = Animator.StringToHash("hurt");
     private static readonly int dieTrig    = Animator.StringToHash("die");
@@ -38,9 +38,10 @@ public class PlayerAnimator : MonoBehaviour
         );
         animator.SetBool(IsGrounded, grounded);
 
-        // ── 跳跃 Trigger ──
-        if (Input.GetButtonDown("Jump"))
-            animator.SetTrigger(isJumpTrig);
+        // ── 跳跃状态（Bool 持续同步，落地即复位）──
+        // isJump 在 AnimatorController 中是 Bool 类型（Jump→Idle 条件 isJump=false），
+        // 必须用 SetBool 驱动，不能用 SetTrigger，否则落地后无法退出 Jump 状态。
+        animator.SetBool(isJumpBool, !grounded);
 
         // ── 攻击 Trigger ──
         if (Input.GetMouseButtonDown(0))
