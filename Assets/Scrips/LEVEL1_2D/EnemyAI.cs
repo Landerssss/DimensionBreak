@@ -86,7 +86,10 @@ public class EnemyAI : MonoBehaviour
     private SpriteRenderer[] allSpriteRenderers;
     private Rigidbody2D rb;
     private Collider2D col; // 主碰撞体，用于 bounds.center
-    private Animator animator;
+    
+    [Header("=== 动画与视觉 ===")]
+    [Tooltip("如果不指定，将自动在物体或子物体中查找")]
+    public Animator animator;
 
     /// <summary>
     /// 获取碰撞体中心位置，避免因精灵锚点偏移导致的抖动。
@@ -104,7 +107,12 @@ public class EnemyAI : MonoBehaviour
         allSpriteRenderers = GetComponentsInChildren<SpriteRenderer>();
         rb = GetComponent<Rigidbody2D>();
         col = GetComponent<Collider2D>();
-        animator = GetComponent<Animator>();
+        
+        // 改进：允许自动查找子物体上的 Animator（兼容带有层级的预制体）
+        if (animator == null)
+        {
+            animator = GetComponentInChildren<Animator>();
+        }
 
         // 用碰撞体中心作为起始位置，避免偏移
         startPos = Center;
@@ -234,9 +242,12 @@ public class EnemyAI : MonoBehaviour
         state = State.Attack;
         attackPauseTimer = attackPauseDuration;
 
-        // 触发攻击动画（假设 Animator 有 "Attack" 触发器）
         if (animator != null)
+        {
+            // 确保在进入攻击状态时关闭行走动画，否则可能造成动画冲突导致行走不正常
+            animator.SetBool("IsWalking", false);
             animator.SetTrigger("Attack");
+        }
 
         // 对玩家造成伤害（如果玩家在范围内）
         if (playerTarget != null)
@@ -381,7 +392,10 @@ public class EnemyAI : MonoBehaviour
 
         // ② 触发死亡动画
         if (animator != null)
+        {
+            animator.SetBool("IsWalking", false);
             animator.SetTrigger("Die");
+        }
 
         // ③ 通知玩家角色的 PlayerStats
         PlayerStats stats = FindAnyObjectByType<PlayerStats>();
@@ -421,13 +435,20 @@ public class EnemyAI : MonoBehaviour
 
     void FaceDirection(int dir)
     {
-        if (spriteRenderer == null) return;
+        // 改进：使用 localScale 进行整体翻转，而不是仅修改单个 spriteRenderer 的 flipX。
+        // 这对于复杂结构（多图层/骨骼动画）的怪物能够确保所有的子物体都正确翻转。
+        Vector3 localScale = transform.localScale;
 
-        // 若素材默认朝左，朝右时需要翻转；反之亦然
         if (defaultFacingLeft)
-            spriteRenderer.flipX = dir > 0;  // 素材朝左：向右走时才 flip
+        {
+            localScale.x = dir > 0 ? -Mathf.Abs(localScale.x) : Mathf.Abs(localScale.x);
+        }
         else
-            spriteRenderer.flipX = dir < 0;  // 素材朝右（默认）：向左走时才 flip
+        {
+            localScale.x = dir < 0 ? -Mathf.Abs(localScale.x) : Mathf.Abs(localScale.x);
+        }
+
+        transform.localScale = localScale;
     }
 
     void OnDrawGizmosSelected()
