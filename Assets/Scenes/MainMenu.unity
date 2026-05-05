@@ -410,9 +410,9 @@ RectTransform:
   - {fileID: 1397276426}
   m_Father: {fileID: 345888939}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 80, y: -10}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 160, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &45850373
@@ -701,6 +701,7 @@ MonoBehaviour:
   thirdClearExp: 2000
   bowUnlocked: 0
   waterBombUnlocked: 0
+  hasEnteredPhase2: 0
   savedPhase1Position: {x: 0, y: 0, z: 0}
   hasSavedPhase1Position: 0
 --- !u!4 &98743927
@@ -1011,7 +1012,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &345888939
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1516,9 +1517,9 @@ RectTransform:
   - {fileID: 1219553288}
   m_Father: {fileID: 345888939}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 80, y: -42}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 160, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &477600850
@@ -3694,9 +3695,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 345888939}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 50, y: -146}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1313873798
@@ -3816,7 +3817,7 @@ MonoBehaviour:
     m_FontSize: 14
     m_FontStyle: 1
     m_BestFit: 0
-    m_MinSize: 10
+    m_MinSize: 0
     m_MaxSize: 40
     m_Alignment: 0
     m_AlignByGeometry: 0
@@ -3850,7 +3851,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1414048191
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5276,7 +5277,7 @@ RectTransform:
   m_Father: {fileID: 944382007}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 10, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -5352,9 +5353,9 @@ RectTransform:
   - {fileID: 43191716}
   m_Father: {fileID: 345888939}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 80, y: -74}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 160, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2067912924
@@ -5473,7 +5474,7 @@ MonoBehaviour:
   rightZoneButton: {fileID: 563869144}
   leftZoneButton: {fileID: 583841498}
   rightZoneLabel: {fileID: 0}
-  leftZoneLabel: {fileID: 0}
+  leftZoneLabel: {fileID: 2125549512}
   centerLabel: {fileID: 0}
   quitConfirmPanel: {fileID: 138166052}
   quitYesButton: {fileID: 872451207}
@@ -5493,7 +5494,7 @@ MonoBehaviour:
   sfxSource: {fileID: 0}
   transitionSFX: {fileID: 0}
   buttonClickSFX: {fileID: 0}
-  labelDay: Setting
+  labelDay: Exit?
   labelDusk: Exit
   labelNight: Title
 --- !u!4 &2102191716
@@ -5544,7 +5545,7 @@ RectTransform:
   m_Father: {fileID: 43191716}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 20, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
