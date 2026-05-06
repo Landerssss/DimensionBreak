@@ -1,77 +1,52 @@
-# 次元突破 (DimensionBreak)
+# 🌌 Dimension Break (次元突破)
 
-## 1. 项目简介 (Project Overview)
-**次元突破** 是一款融合多维度玩法与视觉体验的独立关卡制游戏。玩家在游玩过程中，将经历从 2D 平台跳跃到 2D 策略战棋，再到伪 3D 第一人称射击的无缝多阶段体验。游戏旨在通过不同维度的表现手法，给玩家带来新奇的视觉刺激和玩法乐趣。
+> "打破维度的界限，在 2D 像素与 3D 深渊中穿梭。"
 
-目前项目分为三大核心阶段：
-* **第一阶段 (Phase 1) - 2D动作跳跃**：玩家操控角色在 2D 平台关卡中探索，具备基础移动、冲刺、近战攻击、虚空钩锁等能力，击败敌人以获取经验并升级，解锁二段跳等进阶能力。
-* **第二阶段 (Phase 2) - 2D策略格子解谜**：通过场景中的特定转场点（钩锁触发器），玩家化身为纸片人进入 6x4 的格子空间。这是一款回合制的躲避与寻路小游戏，玩家需要在避开敌人巡逻和固定炮台攻击的同时，找到出口，以解锁弓箭、水魔爆等高级武器和大量经验。难度会根据通关次数动态递增。
-* **第三阶段 (Phase 3) - 伪3D第一人称Boss战**：当玩家在第一阶段获得弓箭或更高维度的武器后，触发地图尽头的黑雾，视角将平滑过渡为第一人称。此阶段面对远方的巨型石头人 Boss，玩家无法自由移动镜头位置，只能通过横向移动躲避 Boss 发出的沙尘暴、飞镖和沙坑，并使用解锁的武器进行远程反击。
+[![Made with Unity](https://img.shields.io/badge/Made%20with-Unity-000000.svg?style=for-the-badge&logo=Unity&logoColor=white)](#)
+[![Language](https://img.shields.io/badge/Language-C%23-239120.svg?style=for-the-badge&logo=c-sharp&logoColor=white)](#)
+[![Status](https://img.shields.io/badge/Status-Graduation_Project-blueViolet.svg?style=for-the-badge)](#)
 
----
+《Dimension Break (次元突破)》是一款融合了硬核动作与维度转换机制的独立游戏，作为计算机科学专业的毕业设计项目开发。本作结合了复古像素与现代 3D 表现手法，玩家将在 2D 平台跳跃探索与 3D 空间 Boss 战之间无缝切换。
 
-## 2. 程序执行逻辑 (Execution Flow)
-游戏通过全局单例 `GameManager` 控制核心状态流转、阶段切换和玩家数据传递。
+## 🎮 核心特性 (Key Features)
 
-### 阶段流转控制
-1. **启动与 Phase 1**：游戏从主菜单加载 `Level1_2D` 场景启动第一阶段。`PlayerController` 处理玩家输入，`EnemyAI` 处理基础敌人逻辑。
-2. **Phase 1 -> Phase 2**：
-    * 玩家在 Phase 1 碰到 `Phase1To2Trigger` 触发器。
-    * 触发器将调用 `GameManager.Instance.SavePhase1Position()` 记录玩家当前位置。
-    * `GameManager` 加载 `Level2_GridPuzzle` 场景。
-3. **Phase 2 循环与结算**：
-    * 在 Phase 2 中，玩家（纸片人）需要走到出口列。
-    * **胜利**：到达出口后，调用 `GameManager.OnPhase2Victory()`。`GameManager` 增加通关计数 `Phase2ClearedCount`，发放对应奖励（经验或解锁武器），然后加载回 Phase 1 场景。
-    * **失败**：如果玩家撞到敌人死亡，调用 `GameManager.OnPhase2Failed()`，直接加载回 Phase 1 场景。
-    * **回到 Phase 1**：`PlayerController` 初始化时检查 `GameManager.hasSavedPhase1Position`，若为真则将玩家位置重置到转场前的坐标，实现无缝回溯。
-4. **Phase 1 -> Phase 3**：
-    * 玩家在 Phase 1 走到关卡尽头的 `Phase1To3Trigger`。
-    * 执行条件检查：必须在 `GameManager` 中解锁了【弓箭】（`bowUnlocked == true`）。
-    * 若满足条件，`GameManager` 加载 `Level3_Boss` 场景，视角切换，进入 Boss 战。若不满足，则界面弹出提示文字阻挡前进。
+*   **跨维度战斗系统**：独特的 2D 到 3D 视角与玩法转换机制。
+*   **硬核动作反馈**：精心调校的攻击判定、击退效果与逐帧动画优化。
+*   **定制化 AI 逻辑**：基于状态机的复杂敌人 AI（包含巡逻、范围索敌与硬核攻击逻辑）。
+*   **多阶段关卡设计**：从主界面轮转 UI 到深度的多阶段战斗场景无缝衔接。
 
 ---
 
-## 3. 第二阶段 (Phase 2) 算法详解
-第二阶段的核心机制不仅在于严格的**回合制状态机**控制，还在于**动态生成的关卡难度适配算法**。
+## 📸 运行截图 (Screenshots)
 
-### 3.1 核心回合制状态机 (TurnManager)
-第二阶段的回合执行严格遵循状态机的顺序推进：
-1. **WaitingForPlayer**：等待玩家输入指令（WASD）。玩家每次按键，纸片人在网格上移动 1 格。
-2. **EnemyMove**：玩家移动完成后，所有存活的 `PaperEnemy` 计算路径并移动 1 格。系统会等待所有敌人的移动缓动动画（含 45° 左右交替摇摆）播放完毕。
-3. **Collision Resolve (中途结算)**：如果敌人刚好踏入炮台所在的格子，炮台将被碾压摧毁。
-4. **TurretFire**：存活的 `Turret` 寻找曼哈顿距离最近的敌人，并生成一枚 `TurretProjectile` 圆形炮弹，以匀速飞向目标。炮弹抵达后，敌人生命值 -1。
-5. **Death Resolve (回合判定)**：
-    * 扣除 HP 的敌人判断是否死亡，并在满足条件时化为泡沫销毁。
-    * 检查玩家位置是否与敌人重叠，若重叠则触发玩家死亡逻辑（游戏失败）。
-    * 若玩家到达第 5 列（出口列），则触发通关逻辑。
-    * 否则，状态机切回 `WaitingForPlayer`，进入下一回合。
+### Phase 1: 初入异界
+*(说明：展示 2D 动作平台的探索与基础战斗)*
+<p align="center">
+  <img src="这里替换为你的第一阶段截图链接或拖入图片" alt="Phase 1 Screenshot" width="80%">
+</p>
 
-### 3.2 动态难度网格生成算法 (GridGenerator)
-为了确保每次进入 Phase 2 都有新鲜感且难度逐渐递增，系统通过以下算法动态构建 6x4 寻路网格：
+### Phase 2: 维度撕裂
+*(说明：展示维度转换的过渡或核心机制)*
+<p align="center">
+  <img src="这里替换为你的第二阶段截图链接或拖入图片" alt="Phase 2 Screenshot" width="80%">
+</p>
 
-1. **难度曲线映射**：
-    * `GameManager` 记录的玩家通关次数 `phase2ClearedCount` 将直接影响生成参数。
-    * **炮台数量**：`Mathf.Min(基础炮台 + 增量 * clearedCount, 最大炮台数)`
-    * **敌人数量**：`Mathf.Min(基础敌人 + 增量 * clearedCount, 最大敌人数)`
+### Phase 3: 深渊巨兽
+*(说明：展示 3D 视角的史诗级 Boss 战)*
+<p align="center">
+  <img src="这里替换为你的第三阶段截图链接或拖入图片" alt="Phase 3 Screenshot" width="80%">
+</p>
 
-2. **空间划分约束**：
-    * **玩家**：固定生成在第 0 列随机行。
-    * **出口标记**：固定生成在第 5 列随机行。
-    * **炮台区域**：只能随机生成在左半边（第 0 ~ 2 列内），禁止与玩家重叠。
-    * **敌人区域**：只能随机生成在右半边（第 3 ~ 5 列内），禁止与出口重叠。
-    * 所有生成通过 Fisher-Yates 算法对可用格子洗牌，保证随机性。
+---
 
-3. **解的存在性验证 (BFS)**：
-    由于障碍物和敌人完全随机放置，有一定概率生成“死局”（玩家被彻底堵死）。生成器在每次布置完毕后，会自动执行 **广度优先搜索 (BFS) 路径验证算法**。
-    * 算法将所有炮台和敌人临时视为不可通行的静态障碍。
-    * 从玩家出生点开始，向上下左右拓展，尝试寻找到达出口列的路径。
-    * **如果能够找到连通路径**，则本张地图生成成功，确认生效。
-    * **如果无法找到连通路径**，算法会重置网格，重新执行第 2 步布点逻辑。
-    * 设有 `maxRetries` (例如 100 次防死循环)，如果超过最大尝试次数仍找不到解，触发 fallback 机制，生成只有玩家和出口的最简直线地图，确保流程绝对不卡死。
+## 🚀 设计过程GDD文档 (Getting Started)
 
-4. **敌人索敌算法**：
-    在回合的 EnemyMove 阶段，每个敌人通过曼哈顿距离寻找下一格动作：
-    * 评估当前位置周围的 4 个格子。
-    * 过滤掉超出边界、进入出口列（列 5，防止敌人堵门）的格子。
-    * 过滤掉被其他实体挡住的格子（但允许踏上炮台格以摧毁炮台）。
-    * 计算合法候选格到玩家当前坐标的曼哈顿距离，选取距离最近的格子作为本回合移动目标。
+设计过程中的详细细节，供开发者使用
+
+👉 **[点击查阅：详细程序执行文档 (Google Docs)](https://docs.google.com/document/d/1QNBj82ANQ6OihIayqhdVNpxFR0wF54GgYTlI05jioSY/edit?tab=t.0)**
+
+### 简易启动步骤
+1. 确保已安装 Unity Editor (建议版本 2022.3 LTS 及以上)。
+2. Clone 本仓库到本地：
+   ```bash
+   git clone [https://github.com/你的GitHub用户名/DimensionBreak.git](https://github.com/你的GitHub用户名/DimensionBreak.git)
