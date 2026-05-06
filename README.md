@@ -1,6 +1,6 @@
 # 🌌 Dimension Break (次元突破)
 
-> "打破维度的界限，在 2D 像素与 3D 深渊中穿梭。"
+> "打破维度的界限，在2D与3D中穿梭。"
 
 [![Made with Unity](https://img.shields.io/badge/Made%20with-Unity-000000.svg?style=for-the-badge&logo=Unity&logoColor=white)](#)
 [![Language](https://img.shields.io/badge/Language-C%23-239120.svg?style=for-the-badge&logo=c-sharp&logoColor=white)](#)
