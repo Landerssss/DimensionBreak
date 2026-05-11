@@ -8,20 +8,20 @@
 
 《Dimension Break (次元突破)》是一款融合了硬核动作与维度转换机制的独立游戏，作为计算机科学专业的毕业设计项目开发。本作结合了复古像素与现代 3D 表现手法，玩家将在 2D 平台跳跃探索跳跃到格子平面战斗
 
-## 🎮 核心特性 (Key Features)
+## 🎮 核心特性
 
 *   **跨维度战斗系统**：独特的 2D 到 3D 视角与玩法转换机制。
 *   **怪物AI 逻辑**：基于状态机的复杂敌人 AI（包含巡逻、范围索敌与硬核攻击逻辑）。
 *   **多阶段关卡设计**：从主界面轮转 UI 到深度的多阶段战斗场景无缝衔接。
 *   
-## 🚀 设计过程GDD文档 (Getting Started)
+## 🚀 设计过程GDD文档
 
 GDD文档，里面阐述了我开发的全流程，包括框架，界面重构，BUG修复，细节优化等
 
-**[详细程序执行文档 (Google Docs)](https://docs.google.com/document/d/1QNBj82ANQ6OihIayqhdVNpxFR0wF54GgYTlI05jioSY/edit?tab=t.0)**
+**[点击查看(Google Docs)](https://docs.google.com/document/d/1QNBj82ANQ6OihIayqhdVNpxFR0wF54GgYTlI05jioSY/edit?tab=t.0)**
 ---
 
-## 📸 运行截图 (Screenshots)
+## 📸 运行截图
 
 ### Phase 1: 初入异界
 *(说明：展示 2D 动作平台的探索与基础战斗)*
