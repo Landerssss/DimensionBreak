@@ -18,7 +18,7 @@
 
 GDD文档，里面阐述了我开发的全流程，包括框架，界面重构，BUG修复，细节优化等
 
-👉 **[点击查阅：详细程序执行文档 (Google Docs)](https://docs.google.com/document/d/1QNBj82ANQ6OihIayqhdVNpxFR0wF54GgYTlI05jioSY/edit?tab=t.0)**
+**[详细程序执行文档 (Google Docs)](https://docs.google.com/document/d/1QNBj82ANQ6OihIayqhdVNpxFR0wF54GgYTlI05jioSY/edit?tab=t.0)**
 ---
 
 ## 📸 运行截图 (Screenshots)
