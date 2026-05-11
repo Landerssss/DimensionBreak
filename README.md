@@ -13,7 +13,12 @@
 *   **跨维度战斗系统**：独特的 2D 到 3D 视角与玩法转换机制。
 *   **怪物AI 逻辑**：基于状态机的复杂敌人 AI（包含巡逻、范围索敌与硬核攻击逻辑）。
 *   **多阶段关卡设计**：从主界面轮转 UI 到深度的多阶段战斗场景无缝衔接。
+*   
+## 🚀 设计过程GDD文档 (Getting Started)
 
+GDD文档，里面阐述了我开发的全流程，包括框架，界面重构，BUG修复，细节优化等
+
+👉 **[点击查阅：详细程序执行文档 (Google Docs)](https://docs.google.com/document/d/1QNBj82ANQ6OihIayqhdVNpxFR0wF54GgYTlI05jioSY/edit?tab=t.0)**
 ---
 
 ## 📸 运行截图 (Screenshots)
@@ -38,11 +43,7 @@
 
 ---
 
-## 🚀 设计过程GDD文档 (Getting Started)
 
-GDD文档，里面阐述了我开发的全流程，包括框架，界面重构，BUG修复，细节优化等
-
-👉 **[点击查阅：详细程序执行文档 (Google Docs)](https://docs.google.com/document/d/1QNBj82ANQ6OihIayqhdVNpxFR0wF54GgYTlI05jioSY/edit?tab=t.0)**
 
 ### 简易启动步骤
 1. 确保已安装 Unity Editor (建议版本 2022.3 LTS 及以上)。
