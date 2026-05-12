@@ -400,10 +400,20 @@ public class BossSceneManager : MonoBehaviour
             // 更新颜色
             if (bossHPBar.fillRect != null)
             {
+                // 先尝试直接获取，如果获取不到则尝试在子物体中获取（兼容不同的 UI 预制体结构）
                 Image fillImage = bossHPBar.fillRect.GetComponent<Image>();
+                if (fillImage == null)
+                {
+                    fillImage = bossHPBar.fillRect.GetComponentInChildren<Image>();
+                }
+
                 if (fillImage != null)
                 {
                     fillImage.color = GetSegmentColor(currentSegmentIndex);
+                }
+                else
+                {
+                    Debug.LogWarning("[BossSceneManager] 无法在血条的 Fill Rect 及其子物体上找到 Image 组件！颜色更新失败。");
                 }
             }
         }
@@ -453,7 +463,7 @@ public class BossSceneManager : MonoBehaviour
 
         Debug.Log("[BossSceneManager] Boss 已被击败！次元突破通关！");
 
-        ShowCenterText("次元突破！");
+        ShowCenterText("Dimension Break！");
 
         // 击败后直接销毁 Boss 物体
         if (bossTransform != null)
