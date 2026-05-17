@@ -23,19 +23,19 @@ GDD文档，里面阐述了我开发的全流程，包括框架，界面重构�
 
 ## 📸 运行截图
 
-### Phase 1: 初入异界
+### Phase 1: 2D
 *(说明：展示 2D 动作平台的探索与基础战斗)*
 <p align="center">
   <img src="这里替换为你的第一阶段截图链接或拖入图片" alt="Phase 1 Screenshot" width="80%">
 </p>
 
-### Phase 2: 维度撕裂
+### Phase 2: 平面
 *(说明：展示维度转换的过渡或核心机制)*
 <p align="center">
   <img src="这里替换为你的第二阶段截图链接或拖入图片" alt="Phase 2 Screenshot" width="80%">
 </p>
 
-### Phase 3: 深渊巨兽
+### Phase 3: 3D
 *(说明：展示 3D 视角的史诗级 Boss 战)*
 <p align="center">
   <img src="这里替换为你的第三阶段截图链接或拖入图片" alt="Phase 3 Screenshot" width="80%">
